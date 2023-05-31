@@ -2,6 +2,7 @@
 #include <random>
 #include <array>
 #include <vector>
+#include <chrono>
 
 // Fisher-Yates
 // Does only work with integers right now
@@ -57,7 +58,7 @@ template<typename T>
 void print_vec(std::vector<T> &vec) {
     int numbers_per_line = 16;
     for (int i = 0; i < vec.size(); i++) {
-        if (i % numbers_per_line == 0) {
+        if ((i % numbers_per_line == 0) && (i != 0)) {
             std::cout << std::endl;
         }
         std::cout << vec[i] << ", ";
@@ -69,24 +70,32 @@ int main(int argc, char const *argv[]) {
     // Rabndom generator
     std::random_device rd;
     // use fixed seed to test
-    int seed = 0;
-    // int seed = rd() 
+    // int seed = 0;
+    int seed = rd();
     std::default_random_engine generator(seed);
 
-    // arbitary vector
-    int size = 64;
-    //std::vector<int> V = {1,2,3,4,5,6,7,8,9,10};
-    std::vector<int> V(size);
-    std::iota(V.begin(), V.end(), 0);
+    // vector size
+    int size = 10000000;
+    // amound of buckets
+    int k = 16;
+    // runs
+    int runs = 50;
 
-    // print array before shuffle
-    print_vec(V);
+    for (int i = 0; i < runs; i++) {
+        std::vector<int> V(size);
+        std::iota(V.begin(), V.end(), 0);
 
-    int k = 4;
-    scatter_shuffle(V, k, generator);
+        auto start = std::chrono::steady_clock::now();
+        scatter_shuffle(V, k, generator);
+        auto end = std::chrono::steady_clock::now();
 
-    // print array after shuffle
-    print_vec(V);
+        // print array after shuffle
+        // print_vec(V);
+
+        std::chrono::duration<double> elapsed_time = end - start;
+        std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() 
+                  << "ms" << std::endl;
+    }
 
     return 0;
 }
