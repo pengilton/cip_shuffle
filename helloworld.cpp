@@ -4,27 +4,29 @@
 #include <random>
 #include <map>
 #include <iomanip>
-
-using namespace std;
+#include <span>
 
 template<typename T>
-void foo(vector<T> &vec) {
+void foo(std::vector<T> &vec) {
     for (int i = 0; i < vec.size(); i++) {
-        cout << vec[i] << " ";
+        std::cout << vec[i] << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 template<typename T>
-void food_dumb(vector<T> vec) {
+void food_dumb(std::vector<T> vec) {
     vec[0] = 100;
     for (int i = 0; i < vec.size(); i++) {
-        cout << vec[i] << " ";
+        std::cout << vec[i] << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 int main() {
+    std::vector<int> vec {0, 1, 2, 3, 4, 5, 6, 7};
+    // std::span my_span {vec.begin(), 4};
+
     // vector<string> msg{"Hello", "C++", "World", "from", "VS Code", "and the C++ extension!"};
     // for (const string &word: msg) {
     //     cout << word << " ";
@@ -40,33 +42,33 @@ int main() {
     // food_dumb(numbers);
     // foo(numbers);
 
-    // Rabndom generator
-    std::random_device rd;
-    // use fixed seed to test
-    int seed = 0;
-    // int seed = rd();
-    std::default_random_engine generator(seed);
+    // // Rabndom generator
+    // std::random_device rd;
+    // // use fixed seed to test
+    // int seed = 0;
+    // // int seed = rd();
+    // std::default_random_engine generator(seed);
 
-    int k = 6;
-    // vector<int> prob_1(6, 1);
-    // double p = (double)1 / double(6);
-    vector<double> prob_1(k, 1.0/k);
-    discrete_distribution<> d(prob_1.begin(), prob_1.end());
-    // map<int, int> map;
-    vector<int> vec(k);
+    // int k = 6;
+    // // vector<int> prob_1(6, 1);
+    // // double p = (double)1 / double(6);
+    // vector<double> prob_1(k, 1.0/k);
+    // discrete_distribution<> d(prob_1.begin(), prob_1.end());
+    // // map<int, int> map;
+    // vector<int> vec(k);
 
-    for (int n = 0; n < 100; ++n)
-        vec[d(generator)]++;
+    // for (int n = 0; n < 100; ++n)
+    //     vec[d(generator)]++;
  
-    // for (const auto& [num, count] : map)
-    //     std::cout << num << " generated " << setw(4) << count << " times\n";
-    for (int i = 0; i < k; i++) {
-        std::cout << i << " generated " << setw(4) << vec[i] << " times\n";
-    }
+    // // for (const auto& [num, count] : map)
+    // //     std::cout << num << " generated " << setw(4) << count << " times\n";
+    // for (int i = 0; i < k; i++) {
+    //     std::cout << i << " generated " << setw(4) << vec[i] << " times\n";
+    // }
 
-    vector<int> test {0, 1, 2, 3, 4, 5};
-    swap(test[2], test[4]);
-    foo(test);
+    // vector<int> test {0, 1, 2, 3, 4, 5};
+    // swap(test[2], test[4]);
+    // foo(test);
 
     // int num[5] = {523, 458, 426, 421, 123};
     // int *numbers[5];

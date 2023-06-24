@@ -15,9 +15,8 @@ void fisher_yates_shuffle(std::vector<T> &vec, std::default_random_engine &gen) 
         int j = distrib(gen);
 
         // swapping of values -> might change this with std::swap
-        T temp = vec[i];
-        vec[i] = vec[j];
-        vec[j] = temp;
+        using std::swap;
+        swap(vec[i], vec[j]);
     }
 }
 
@@ -123,7 +122,8 @@ void rough_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::d
 
         if (j != 0) {
             // They are helpful here
-            std::swap(vec[s_0], vec[s_j]);
+            using std::swap;
+            swap(vec[s_0], vec[s_j]);
         }
 
         s_j++;
@@ -196,7 +196,8 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
         // the staging area of 
         while ((buckets[3*i+2] - buckets[3*i]) - n_f[i] > c[i]) {
             // Swapping the last placed item of bucket i+1 with the last staged item of bucket i
-            std::swap(vec[buckets[3*i+2] - 1] vec[buckets[3*(i+1)+1] - 1]);
+            using std::swap;
+            swap(vec[buckets[3*i+2] - 1] vec[buckets[3*(i+1)+1] - 1]);
             // Adjusting the buckets
             buckets[3*i+2]--;
             buckets[3*(i+1)]--;
@@ -208,7 +209,8 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     for (int i = k-1; i > 0; i--) {
         while (buckets[3*i+2] - buckets[3*i] > n_f[i]) {
             // Swapping first placed item in bucket i with the first staged item in bucket i
-            std::swap(vec[buckets[3*i]], vec[buckets[3*i+1]]);
+            using std::swap;
+            swap(vec[buckets[3*i]], vec[buckets[3*i+1]]);
             // Adjusting the buckets
             buckets[3*i+1]++;
             buckets[3*i]++;
@@ -222,7 +224,8 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     for (int j = 0; j < k; i++) {
         int l = buckets[3*j+1]
         while (l < buckets[3*j+2]) {
-            std::swap(vec[i], vec[l]);
+            using std::swap;
+            swap(vec[i], vec[l]);
             stack.push_back(l);
             i++;
             l++;
@@ -235,7 +238,8 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     // Now reverting the reordering
     while (stack.size() > 0) {
         i--;
-        std::swap(vec[i], vec[stack.back()]);
+        using std::swap;
+        swap(vec[i], vec[stack.back()]);
         vec.pop_back();
     }
 }
@@ -250,7 +254,8 @@ void fisher_yates_shuffle(std::vector<T> &vec, int size, std::default_random_eng
         int j = distrib(gen);
 
         // swapping of values -> might change this with std::swap
-        std::swap(vec[i], vec[j]);
+        using std::swap;
+        swap(vec[i], vec[j]);
     }
 }
 
