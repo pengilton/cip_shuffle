@@ -3,10 +3,12 @@
 #include <array>
 #include <vector>
 #include <chrono>
+#include <span>
 
-// Fisher-Yates
-// Swapping of elements could be its own function. Maybe there is a way to swap elements
-// in the standard library 
+
+
+
+// Fisher Yates
 template<typename T>
 void fisher_yates_shuffle(std::vector<T> &vec, std::default_random_engine &gen) {
     for (int i = 0; i < vec.size() - 1; i++) {
@@ -20,95 +22,41 @@ void fisher_yates_shuffle(std::vector<T> &vec, std::default_random_engine &gen) 
     }
 }
 
-// We will implenet the sequential version of scatter shuffle
+// Fisher-Yates
+// Swapping of elements could be its own function. Maybe there is a way to swap elements
+// in the standard library 
 template<typename T>
-void scatter_shuffle(std::vector<T> &vec, int k, std::default_random_engine &gen) {
-    // Might be unnecessary 
-    if (vec.size() == 0) {
-        return;
-    }
-
-    int small = 256;
-    if (vec.size() <= small) {
-        fisher_yates_shuffle(vec, gen);
-        return;
-    }
-
-    // We have k buckets. A bucket is a vecotr for now. 
-    std::vector<T> buckets[k];
-    // Uniform distribution from 0 to k-1
-    std::uniform_int_distribution<> distrib(0, k-1);
-
-    for (int i = 0; i < vec.size(); i++) {
-        // randomly choose a bucket
+void fisher_yates_shuffle(std::span<T> data_span, std::default_random_engine &gen) {
+    for (int i = 0; i < data_span.size() - 1; i++) {
+        // uniform sample from [i, N)
+        std::uniform_int_distribution<> distrib(i, data_span.size()-1);
         int j = distrib(gen);
-        // copies value to chosen bucket
-        buckets[j].push_back(vec[i]);
-    }
 
-    int s = 0;
-    for (int j = 0; j < k; j++) {
-        scatter_shuffle(buckets[j], k, gen);
-        std::copy(buckets[j].begin(), buckets[j].end(), vec.begin() + s);
-        s += buckets[j].size();
+        // swapping of values -> might change this with std::swap
+        using std::swap;
+        swap(data_span[i], data_span[j]);
     }
 }
 
-
-// IpScShuf
-// First draft of the inplace scatter shuffle algorithm based on chapter 3
+// There might be a better way than this. I only want to referene a subvector. 
+// Maybe iterators? For now, this should do the trick.
 template<typename T>
-void inplace_scatter_shuffle(std::vector<T> &vec, int k, std::default_random_engine &gen) {
-    // Might be unnecessary
-    if (vec.size() == 0) {
-        return;
-    }
+void fisher_yates_shuffle(std::span<T> data_span, int size, std::default_random_engine &gen) {
+    for (int i = 0; i < size - 1; i++) {
+        // uniform sample from [i, N)
+        std::uniform_int_distribution<> distrib(i, size-1);
+        int j = distrib(gen);
 
-    int small = 256;
-    if (vec.size() <= small) {
-        fisher_yates_shuffle(vec, gen);
-        return;
-    }
-
-    // An vector which contains the triples of indices (bi, si, ei) but instead of having an 
-    // array of triples we just put them next to each other. Hence each block of three elements in 
-    // the array is one triple.
-    // Maybe I should creade a small fucntion which creates the buckets to make this function 
-    // a bit cleaner.
-    std::vector<int> buckets(3*k);
-    int b_size = vec.size() / k;
-    int remainder = vec.size() % k;
-    int p = 0;
-    for (int i = 0; i < k; i++) {
-        buckets[3*i] = p;    // bi
-        buckets[3*i+1] = p;  // si
-        p += b_size;
-        if (remainder > 0) {
-            p++;
-            remainder--;
-        }
-        buckets[3*i+2] = p; // ei
-    }
-
-    // Rough Scatter
-    rough_scatter(vec, buckets, k, gen);
-
-    // Fine Scatter which does the twosweap thing and assigns the last itmes 
-    fine_scatter(vec, buckets, k, gen);
-
-    // same code as in ScShuf
-    // here it breaks.. I cannot pass a part of a vector 
-    int s = 0;
-    for (int j = 0; j < k; j++) {
-        scatter_shuffle(buckets[j], k, gen);
-        std::copy(buckets[j].begin(), buckets[j].end(), vec.begin() + s);
-        s += buckets[j].size();
+        // swapping of values -> might change this with std::swap
+        using std::swap;
+        swap(data_span[i], data_span[j]);
     }
 }
+
 
 // Rough Scatter
 template<typename T>
-void rough_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
+void rough_scatter(std::span<T> data_span, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
     // Uniform distribution from 0 to k-1
     std::uniform_int_distribution<> distrib(0, k-1);
 
@@ -123,7 +71,7 @@ void rough_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::d
         if (j != 0) {
             // They are helpful here
             using std::swap;
-            swap(vec[s_0], vec[s_j]);
+            swap(data_span[s_0], data_span[s_j]);
         }
 
         s_j++;
@@ -137,7 +85,7 @@ void rough_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::d
 
 // Fine Scattr. I might have to implement that sweaping thing as a separate function
 template<typename T>
-void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
+void fine_scatter(std::span<T> data_span, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
     std::vector<int> n_placed(k);   // ith element = #placed items in bucket i
     std::vector<int> n_staged(k);   // ith element = #items that will be placed in bucket i; multinomial
     std::vector<int> n_f(k);        // ith element = size of bucket i
@@ -150,11 +98,11 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     // result in n_placed
     for (int i = 0; i < k; i++) {
         // si - bi
-        n_placed[i] = buckets[3*i+1] - buckets[3*i] 
+        n_placed[i] = buckets[3*i+1] - buckets[3*i];
 
         // While we are iterating over the elements, we can also get the number of 
         // items whhich are still staged. 
-        num_staged_items += buckets[3*i+2] - buckets[3*i+1]
+        num_staged_items += buckets[3*i+2] - buckets[3*i+1];
     }
 
     // Technically this line could be replaced by prob(k, 1) as 
@@ -163,7 +111,7 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     std::discrete_distribution<> distrib(prob.begin(), prob.end());
     // I followed the example in the documentation (cppreference)
     for (int i = 0; i < num_staged_items; i++) {
-        n_staged[d(gen)]++;
+        n_staged[d[distrib(gen)]]++;
     }
 
     // Calculate the sum of both vectors and store it in n_f
@@ -178,7 +126,7 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
         // One idea: rounding 
         // Another idea: keep them as floats/doubles?
         // for now I assume that vec.size() is divisabel by k
-        d[i] = n_f[i] - vec.size() / k;
+        d[i] = n_f[i] - data_span.size() / k;
     }
 
     // Now we fill the vector c
@@ -197,7 +145,7 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
         while ((buckets[3*i+2] - buckets[3*i]) - n_f[i] > c[i]) {
             // Swapping the last placed item of bucket i+1 with the last staged item of bucket i
             using std::swap;
-            swap(vec[buckets[3*i+2] - 1] vec[buckets[3*(i+1)+1] - 1]);
+            swap(data_span[buckets[3*i+2] - 1], data_span[buckets[3*(i+1)+1] - 1]);
             // Adjusting the buckets
             buckets[3*i+2]--;
             buckets[3*(i+1)]--;
@@ -210,7 +158,7 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
         while (buckets[3*i+2] - buckets[3*i] > n_f[i]) {
             // Swapping first placed item in bucket i with the first staged item in bucket i
             using std::swap;
-            swap(vec[buckets[3*i]], vec[buckets[3*i+1]]);
+            swap(data_span[buckets[3*i]], data_span[buckets[3*i+1]]);
             // Adjusting the buckets
             buckets[3*i+1]++;
             buckets[3*i]++;
@@ -221,11 +169,11 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     // Now we can assign the remaining staged items
     std::vector<int> stack;
     int i = 0;
-    for (int j = 0; j < k; i++) {
-        int l = buckets[3*j+1]
+    for (int j = 0; j < k; j++) {
+        int l = buckets[3*j+1];
         while (l < buckets[3*j+2]) {
             using std::swap;
-            swap(vec[i], vec[l]);
+            swap(data_span[i], data_span[l]);
             stack.push_back(l);
             i++;
             l++;
@@ -233,30 +181,102 @@ void fine_scatter(std::vector<T> &vec, std::vector<int> &buckets, int k, std::de
     }
 
     // All staged items should be grouped together now. Using Fisher-Yates here
-    fisher_yates_shuffle(vec, stack.size(), gen);
+    // Maybe use supspan here instad of using stack.size()
+    fisher_yates_shuffle(data_span, stack.size(), gen);
 
     // Now reverting the reordering
     while (stack.size() > 0) {
         i--;
         using std::swap;
-        swap(vec[i], vec[stack.back()]);
-        vec.pop_back();
+        swap(data_span[i], data_span[stack.back()]);
+        stack.pop_back();
     }
 }
 
-// There might be a better way than this. I only want to referene a subvector. 
-// Maybe iterators? For now, this should do the trick.
-template<typename T>
-void fisher_yates_shuffle(std::vector<T> &vec, int size, std::default_random_engine &gen) {
-    for (int i = 0; i < size - 1; i++) {
-        // uniform sample from [i, N)
-        std::uniform_int_distribution<> distrib(i, size-1);
-        int j = distrib(gen);
 
-        // swapping of values -> might change this with std::swap
-        using std::swap;
-        swap(vec[i], vec[j]);
+// We will implenet the sequential version of scatter shuffle
+template<typename T>
+void scatter_shuffle(std::vector<T> &data_span, int k, std::default_random_engine &gen) {
+    // Might be unnecessary 
+    if (data_span.empty()) {
+        return;
     }
+
+    int small = 256;
+    if (data_span.size() <= small) {
+        fisher_yates_shuffle(data_span, gen);
+        return;
+    }
+
+    // We have k buckets. A bucket is a vecotr for now. 
+    std::vector<T> buckets[k];
+    // Uniform distribution from 0 to k-1
+    std::uniform_int_distribution<> distrib(0, k-1);
+
+    for (int i = 0; i < data_span.size(); i++) {
+        // randomly choose a bucket
+        int j = distrib(gen);
+        // copies value to chosen bucket
+        buckets[j].push_back(data_span[i]);
+    }
+
+    int s = 0;
+    for (int j = 0; j < k; j++) {
+        scatter_shuffle(buckets[j], k, gen);
+        std::copy(buckets[j].begin(), buckets[j].end(), data_span.begin() + s);
+        s += buckets[j].size();
+    }
+}
+
+// IpScShuf
+// First draft of the inplace scatter shuffle algorithm based on chapter 3
+template<typename T>
+void inplace_scatter_shuffle(std::span<T> data_span, int k, std::default_random_engine &gen) {
+    // Might be unnecessary
+    if (data_span.empty()) {
+        return;
+    }
+
+    int small = 256;
+    if (data_span.size() <= small) {
+        fisher_yates_shuffle(data_span, gen);
+        return;
+    }
+
+    // An vector which contains the triples of indices (bi, si, ei) but instead of having an 
+    // array of triples we just put them next to each other. Hence each block of three elements in 
+    // the array is one triple.
+    // Maybe I should creade a small fucntion which creates the buckets to make this function 
+    // a bit cleaner.
+    std::vector<int> buckets(3*k);
+    int b_size = data_span.size() / k;
+    int remainder = data_span.size() % k;
+    int p = 0;
+    for (int i = 0; i < k; i++) {
+        buckets[3*i] = p;    // bi
+        buckets[3*i+1] = p;  // si
+        p += b_size;
+        if (remainder > 0) {
+            p++;
+            remainder--;
+        }
+        buckets[3*i+2] = p; // ei
+    }
+
+    // Rough Scatter
+    rough_scatter(data_span, buckets, k, gen);
+
+    // Fine Scatter which does the twosweap thing and assigns the last itmes 
+    fine_scatter(data_span, buckets, k, gen);
+
+    // same code as in ScShuf
+    // here it breaks.. I cannot pass a part of a vector 
+    // int s = 0;
+    // for (int j = 0; j < k; j++) {
+    //     scatter_shuffle(buckets[j], k, gen);
+    //     std::copy(buckets[j].begin(), buckets[j].end(), vec.begin() + s);
+    //     s += buckets[j].size();
+    // }
 }
 
 
@@ -292,9 +312,12 @@ int main(int argc, char const *argv[]) {
     for (int i = 0; i < runs; i++) {
         std::vector<int> V(size);
         std::iota(V.begin(), V.end(), 0);
+        
+        std::span span = std::span(V);
 
         auto start = std::chrono::steady_clock::now();
-        scatter_shuffle(V, k, generator);
+        // scatter_shuffle(V, k, generator);
+        inplace_scatter_shuffle(span, k, generator);
         auto end = std::chrono::steady_clock::now();
 
         // print array after shuffle

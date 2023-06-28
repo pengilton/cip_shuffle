@@ -15,6 +15,22 @@ void foo(std::vector<T> &vec) {
 }
 
 template<typename T>
+void foo_span(std::span<T> mySpan) {
+
+    // if (!mySpan.empty()) {
+    //     std::span subspan {mySpan.subspan(0, mySpan.size()-1)};
+    //     foo_span(subspan);
+    // }
+
+    mySpan[0] = 100;
+
+    for (int i = 0; i < mySpan.size(); i++) {
+        std::cout << mySpan[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+template<typename T>
 void food_dumb(std::vector<T> vec) {
     vec[0] = 100;
     for (int i = 0; i < vec.size(); i++) {
@@ -23,8 +39,17 @@ void food_dumb(std::vector<T> vec) {
     std::cout << std::endl;
 }
 
+void print_subvector(std::span<int> span) {
+    for (auto value : span) {
+        std::cout << value << " ";
+    }
+    std::cout << std::endl;
+}
+
 int main() {
     std::vector<int> vec {0, 1, 2, 3, 4, 5, 6, 7};
+    std::span<int> mySpan{vec.data(), vec.size()};
+    print_subvector(std::span(vec.begin(), 4));
     // std::span my_span {vec.begin(), 4};
 
     // vector<string> msg{"Hello", "C++", "World", "from", "VS Code", "and the C++ extension!"};
