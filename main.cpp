@@ -5,7 +5,12 @@
 #include <chrono>
 #include <span>
 
-
+// Bucket as data structure
+struct bucket {
+    uint64_t b_i;
+    uint64_t s_i;
+    uint64_t e_i;
+};
 
 
 // Fisher Yates
@@ -55,35 +60,39 @@ void fisher_yates_shuffle(std::span<T> data_span, int size, std::default_random_
 
 
 // Rough Scatter
-template<typename T>
-void rough_scatter(std::span<T> data_span, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
+// Might have to swap size_t and typename
+template<std::size_t K, typename T>
+void rough_scatter(std::span<T> data_span, std::array<int, K> &buckets, std::default_random_engine &gen) {
     // Uniform distribution from 0 to k-1
-    std::uniform_int_distribution<> distrib(0, k-1);
+    std::uniform_int_distribution<> distrib(0, K-1);
 
-    bool done = false;
-    while (!done) {
+
+    // Lets remove bool = done and add if break
+    while (true) {
         int j = distrib(gen);
 
         // Not sure if I need all those variables.
-        int s_0 = buckets[1];
-        int s_j = buckets[3*j+1];
+        int s_0 = buckets[0].s_i;
+        int s_j = buckets[j].s_i;
 
+        // Benchmark if this if slows down the code
         if (j != 0) {
             // They are helpful here
             using std::swap;
             swap(data_span[s_0], data_span[s_j]);
         }
 
+        // Maybe just use the increment operator directly
         s_j++;
-        buckets[3*j+1] = s_j;
+        buckets[j].s_i = s_j;
 
-        if (buckets[3*j+1] == buckets[3*j+2]) {
-            done = true;
+        if (buckets[j].s_i == buckets[j].e_i) {
+            break;
         }
     }
 }
 
-// Fine Scattr. I might have to implement that sweaping thing as a separate function
+// Fine Scatter. I might have to implement that sweaping thing as a separate function
 template<typename T>
 void fine_scatter(std::span<T> data_span, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
     std::vector<int> n_placed(k);   // ith element = #placed items in bucket i
@@ -230,8 +239,8 @@ void scatter_shuffle(std::vector<T> &data_span, int k, std::default_random_engin
 
 // IpScShuf
 // First draft of the inplace scatter shuffle algorithm based on chapter 3
-template<typename T>
-void inplace_scatter_shuffle(std::span<T> data_span, int k, std::default_random_engine &gen) {
+template<std::size_t K, typename T>
+void inplace_scatter_shuffle(std::span<T> data_span, std::default_random_engine &gen) {
     // Might be unnecessary
     if (data_span.empty()) {
         return;
@@ -248,19 +257,11 @@ void inplace_scatter_shuffle(std::span<T> data_span, int k, std::default_random_
     // the array is one triple.
     // Maybe I should creade a small fucntion which creates the buckets to make this function 
     // a bit cleaner.
-    std::vector<int> buckets(3*k);
-    int b_size = data_span.size() / k;
-    int remainder = data_span.size() % k;
-    int p = 0;
-    for (int i = 0; i < k; i++) {
-        buckets[3*i] = p;    // bi
-        buckets[3*i+1] = p;  // si
-        p += b_size;
-        if (remainder > 0) {
-            p++;
-            remainder--;
-        }
-        buckets[3*i+2] = p; // ei
+    std::array<bucket, K> buckets;
+    for (int i = 0; i < K; i++) {
+        buckets[i].b_i = static_cast<uint64_t>(data_span.size()) * i / K;
+        buckets[i].s_i = static_cast<uint64_t>(data_span.size()) * i / K;;
+        buckets[i].e_i = static_cast<uint64_t>(data_span.size()) * (i+1) / K;
     }
 
     // Rough Scatter
@@ -305,7 +306,8 @@ int main(int argc, char const *argv[]) {
     // vector size
     int size = 1000000;
     // amound of buckets
-    int k = 16;
+    constexpr std::size_t K = 16;
+
     // runs
     int runs = 10;
 
