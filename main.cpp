@@ -62,7 +62,7 @@ void fisher_yates_shuffle(std::span<T> data_span, int size, std::default_random_
 // Rough Scatter
 // Might have to swap size_t and typename
 template<std::size_t K, typename T>
-void rough_scatter(std::span<T> data_span, std::array<int, K> &buckets, std::default_random_engine &gen) {
+void rough_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::default_random_engine &gen) {
     // Uniform distribution from 0 to k-1
     std::uniform_int_distribution<> distrib(0, K-1);
 
@@ -93,54 +93,54 @@ void rough_scatter(std::span<T> data_span, std::array<int, K> &buckets, std::def
 }
 
 // Fine Scatter. I might have to implement that sweaping thing as a separate function
-template<typename T>
-void fine_scatter(std::span<T> data_span, std::vector<int> &buckets, int k, std::default_random_engine &gen) {
-    std::vector<int> n_placed(k);   // ith element = #placed items in bucket i
-    std::vector<int> n_staged(k);   // ith element = #items that will be placed in bucket i; multinomial
-    std::vector<int> n_f(k);        // ith element = size of bucket i
-    std::vector<int> d(k);          // ith element = n_f_i - n/k
-    std::vector<int> c(k);          // ci indicates how many items are needed left of bucket i
+template<std::size_t K, typename T>
+void fine_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::default_random_engine &gen) {
+    std::vector<int> n_placed(K);           // ith element = #placed items in bucket i 
+    std::vector<int> n_to_be_placed(K);     // ith element = #items that will be placed in bucket i; multinomial
+    std::vector<int> n_f(K);                // ith element = size of bucket i
+    std::vector<int> d(K);                  // ith element = n_f_i - n/k
+    std::vector<int> c(K);                  // ci indicates how many items are needed left of bucket i
 
     int num_staged_items = 0;
 
     // Calcualtes the number of palced items in each bucket and store the 
     // result in n_placed
-    for (int i = 0; i < k; i++) {
+    for (int i = 0; i < K; i++) {
         // si - bi
-        n_placed[i] = buckets[3*i+1] - buckets[3*i];
+        n_placed[i] = buckets[i].s_i - buckets[i].b_i;
 
         // While we are iterating over the elements, we can also get the number of 
         // items whhich are still staged. 
-        num_staged_items += buckets[3*i+2] - buckets[3*i+1];
+        // e_i - s_i
+        num_staged_items += buckets[i].e_i - buckets[i].s_i;
     }
 
     // Technically this line could be replaced by prob(k, 1) as 
     // discrete_distribution already divides each element by its sum.
-    std::vector<double> prob(k, 1.0/k);
+    std::vector<double> prob(K, 1.0/K);
     std::discrete_distribution<> distrib(prob.begin(), prob.end());
     // I followed the example in the documentation (cppreference)
     for (int i = 0; i < num_staged_items; i++) {
-        n_staged[d[distrib(gen)]]++;
+        n_to_be_placed[distrib(gen)]++;
     }
 
     // Calculate the sum of both vectors and store it in n_f
     // Here I could use the std::transform function
-    for (int i = 0; i < k; i++) {
-        n_f[i] = n_placed[i] + n_staged[i];
+    for (int i = 0; i < K; i++) {
+        n_f[i] = n_placed[i] + n_to_be_placed[i];
     }
 
     // Now we calculate all di
-    for (int i = 0; i < k; i++) {
-        // This line is problematic. What if vec.size() is not divisable by k? 
-        // One idea: rounding 
-        // Another idea: keep them as floats/doubles?
-        // for now I assume that vec.size() is divisabel by k
-        d[i] = n_f[i] - data_span.size() / k;
+    for (int i = 0; i < K; i++) {
+        // d[i] = n_f[i] - data_span.size() / K;
+
+        // I use the actual bucket size instead of the mean
+        d[i] = n_f[i] - (buckets[i].e_i - buckets[i].b_i)
     }
 
     // Now we fill the vector c
     // Think I can make this better because c[i] = c[i-1] + d[i-1]
-    for (int i = 1; i < k; i++) {
+    for (int i = 1; i < K; i++) {
         for (int j = 0; j < i-1; j++) {
             c[i] += d[j];
         }
@@ -148,30 +148,30 @@ void fine_scatter(std::span<T> data_span, std::vector<int> &buckets, int k, std:
 
     // Now we can do the TwoSweep part 
     // We sweep from left to right
-    for (int i = 0; i < k-1; i++) {
+    for (int i = 0; i < K-1; i++) {
         // If bucket Bi is too large by more than ci we move excess staged items into
         // the staging area of 
-        while ((buckets[3*i+2] - buckets[3*i]) - n_f[i] > c[i]) {
-            // Swapping the last placed item of bucket i+1 with the last staged item of bucket i
+        while ((buckets[i].e_i - buckets[i].b_i) - n_f[i] > c[i]) {
+            // Swapping the last staged item of bucket i with the last placed item of bucket i+1
             using std::swap;
-            swap(data_span[buckets[3*i+2] - 1], data_span[buckets[3*(i+1)+1] - 1]);
+            swap(data_span[buckets[i].e_i - 1], data_span[buckets[i+1].s_i - 1]);
             // Adjusting the buckets
-            buckets[3*i+2]--;
-            buckets[3*(i+1)]--;
-            buckets[3*(i+1)+1]--;
+            buckets[i].e_i--;
+            buckets[i+1].b_i--;
+            buckets[i+1].s_i--;
         }
     }
 
     // We sweep from right to left
-    for (int i = k-1; i > 0; i--) {
-        while (buckets[3*i+2] - buckets[3*i] > n_f[i]) {
+    for (int i = K-1; i > 0; i--) {
+        while (buckets[i].e_i - buckets[i].b_i > n_f[i]) {
             // Swapping first placed item in bucket i with the first staged item in bucket i
             using std::swap;
-            swap(data_span[buckets[3*i]], data_span[buckets[3*i+1]]);
+            swap(data_span[buckets[i].b_i], data_span[buckets[i].s_i]);
             // Adjusting the buckets
-            buckets[3*i+1]++;
-            buckets[3*i]++;
-            buckets[3*(i-1)+2]++;
+            buckets[i].s_i++;
+            buckets[i].b_i++;
+            buckets[i-1].e_i++;
         }
     }
 
