@@ -265,10 +265,10 @@ void inplace_scatter_shuffle(std::span<T> data_span, std::default_random_engine 
     }
 
     // Rough Scatter
-    rough_scatter(data_span, buckets, k, gen);
+    rough_scatter<K>(data_span, buckets, gen);
 
     // Fine Scatter which does the twosweap thing and assigns the last itmes 
-    fine_scatter(data_span, buckets, k, gen);
+    fine_scatter<K>(data_span, buckets, gen);
 
     // same code as in ScShuf
     // here it breaks.. I cannot pass a part of a vector 
@@ -319,7 +319,7 @@ int main(int argc, char const *argv[]) {
 
         auto start = std::chrono::steady_clock::now();
         // scatter_shuffle(V, k, generator);
-        inplace_scatter_shuffle(span, k, generator);
+        inplace_scatter_shuffle<K>(span, generator);
         auto end = std::chrono::steady_clock::now();
 
         // print array after shuffle
