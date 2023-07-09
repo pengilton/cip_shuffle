@@ -99,7 +99,7 @@ void fine_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::d
     std::vector<int> n_to_be_placed(K);     // ith element = #items that will be placed in bucket i; multinomial
     std::vector<int> n_f(K);                // ith element = size of bucket i
     std::vector<int> d(K);                  // ith element = n_f_i - n/k
-    std::vector<int> c(K);                  // ci indicates how many items are needed left of bucket i
+    std::vector<int> c(K, 0);                  // ci indicates how many items are needed left of bucket i
 
     int num_staged_items = 0;
 
@@ -135,13 +135,13 @@ void fine_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::d
         // d[i] = n_f[i] - data_span.size() / K;
 
         // I use the actual bucket size instead of the mean
-        d[i] = n_f[i] - (buckets[i].e_i - buckets[i].b_i)
+        d[i] = n_f[i] - (buckets[i].e_i - buckets[i].b_i);
     }
 
     // Now we fill the vector c
     // Think I can make this better because c[i] = c[i-1] + d[i-1]
     for (int i = 1; i < K; i++) {
-        for (int j = 0; j < i-1; j++) {
+        for (int j = 0; j <= i-1; j++) {
             c[i] += d[j];
         }
     }
@@ -150,8 +150,9 @@ void fine_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::d
     // We sweep from left to right
     for (int i = 0; i < K-1; i++) {
         // If bucket Bi is too large by more than ci we move excess staged items into
-        // the staging area of 
-        while ((buckets[i].e_i - buckets[i].b_i) - n_f[i] > c[i]) {
+        // the staging area of bucket i+1
+        // NOTE: buckets store uint64_t data and everything else is an int! Might cause issues!
+        while ((buckets[i].e_i - buckets[i].b_i) > c[i] + n_f[i]) {
             // Swapping the last staged item of bucket i with the last placed item of bucket i+1
             using std::swap;
             swap(data_span[buckets[i].e_i - 1], data_span[buckets[i+1].s_i - 1]);
@@ -175,12 +176,13 @@ void fine_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::d
         }
     }
 
-    // Now we can assign the remaining staged items
+    // Now we can assign the remaining staged items. We move the staged
+    // items together.
     std::vector<int> stack;
     int i = 0;
-    for (int j = 0; j < k; j++) {
-        int l = buckets[3*j+1];
-        while (l < buckets[3*j+2]) {
+    for (int j = 0; j < K; j++) {
+        int l = buckets[j].s_i;
+        while (l < buckets[j].e_i) {
             using std::swap;
             swap(data_span[i], data_span[l]);
             stack.push_back(l);
@@ -190,7 +192,7 @@ void fine_scatter(std::span<T> data_span, std::array<bucket, K> &buckets, std::d
     }
 
     // All staged items should be grouped together now. Using Fisher-Yates here
-    // Maybe use supspan here instad of using stack.size()
+    // Maybe use subspan here instad of using stack.size()
     fisher_yates_shuffle(data_span, stack.size(), gen);
 
     // Now reverting the reordering
@@ -246,7 +248,8 @@ void inplace_scatter_shuffle(std::span<T> data_span, std::default_random_engine 
         return;
     }
 
-    int small = 256;
+    // Change to 256
+    int small = 2;
     if (data_span.size() <= small) {
         fisher_yates_shuffle(data_span, gen);
         return;
@@ -270,14 +273,13 @@ void inplace_scatter_shuffle(std::span<T> data_span, std::default_random_engine 
     // Fine Scatter which does the twosweap thing and assigns the last itmes 
     fine_scatter<K>(data_span, buckets, gen);
 
-    // same code as in ScShuf
-    // here it breaks.. I cannot pass a part of a vector 
-    // int s = 0;
-    // for (int j = 0; j < k; j++) {
-    //     scatter_shuffle(buckets[j], k, gen);
-    //     std::copy(buckets[j].begin(), buckets[j].end(), vec.begin() + s);
-    //     s += buckets[j].size();
-    // }
+    // Squentially calling inplace_scatter_schuffle on each bucket.
+    // This part should be hhighly parallelisable.
+    for (int i = 0; i < K; i++) {
+        // Might be unnecessary to create a span
+        std::span bucket_span = data_span.subspan(buckets[i].b_i, buckets[i].e_i - buckets[i].b_i);
+        inplace_scatter_shuffle<K>(bucket_span, gen);
+    }
 }
 
 
@@ -304,7 +306,7 @@ int main(int argc, char const *argv[]) {
     std::default_random_engine generator(seed);
 
     // vector size
-    int size = 1000000;
+    int size = 100000;
     // amound of buckets
     constexpr std::size_t K = 16;
 
