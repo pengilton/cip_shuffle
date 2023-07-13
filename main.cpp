@@ -306,11 +306,11 @@ int main(int argc, char const *argv[]) {
     std::default_random_engine generator(seed);
 
     // vector size
-    int size = 100000;
+    int size = 1000000;
     // amound of buckets
     constexpr std::size_t K = 16;
 
-    // runs
+    /* // runs
     int runs = 10;
 
     for (int i = 0; i < runs; i++) {
@@ -330,7 +330,34 @@ int main(int argc, char const *argv[]) {
         std::chrono::duration<double> elapsed_time = end - start;
         std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() 
                   << "ms" << std::endl;
+    } */
+
+    //-------------------------------------------
+
+    // Let's do some testing if code is correct
+    int sample_size = 10;
+    std::vector<int> values(sample_size, 0);
+    int runs = 100;
+
+    for (int i = 0; i < runs; i++) {
+        std::vector<int> V(size);
+        std::iota(V.begin(), V.end(), 0);
+        
+        std::span span = std::span(V);
+
+        inplace_scatter_shuffle<K>(span, generator);
+
+        for (int j = 0; j < sample_size; j++) {
+            values[j] += V[j];
+        }
     }
+
+    std::cout << "";
+
+    for (int i = 0; i < sample_size; i++) {
+        std::cout << values[i] << " ";
+    } 
+    std::cout << std::endl;
 
     return 0;
 }
