@@ -337,7 +337,7 @@ int main(int argc, char const *argv[]) {
     // Let's do some testing if code is correct
     int sample_size = 10;
     std::vector<int> values(sample_size, 0);
-    int runs = 100;
+    int runs = 1;
 
     for (int i = 0; i < runs; i++) {
         std::vector<int> V(size);
