@@ -5,6 +5,7 @@
 #include <chrono>
 #include <span>
 #include <algorithm>
+#include <numeric>
 
 // Bucket as data structure
 struct bucket_limits {
@@ -75,9 +76,9 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     std::array<size_t, K> needed_items_left_of_each_bucket {};
 
     size_t num_staged_items = 0;
-
+    
     for (std::size_t i = 0; i < K; i++) {
-        const auto& bucket = buckets[i];
+        auto& bucket = buckets[i];
         num_of_placed_items[i] = bucket.num_placed();
         num_staged_items += bucket.num_staged();
     }
@@ -102,14 +103,9 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
         derivation_of_bucket_sizes[i] = total_bucket_sizes[i] - buckets[i].num_total();
     }
 
-    // Now we fill the vector c
-    // Think I can make this better because c[i] = c[i-1] + d[i-1]
-    // TODO: Replace with std::esclusive_scan
-    for (std::size_t i = 1; i < K; i++) {
-        for (std::size_t j = 0; j <= i-1; j++) {
-            needed_items_left_of_each_bucket[i] += derivation_of_bucket_sizes[j];
-        }
-    }
+    // Now we fill the vector needed_items_left_of_each_bucket
+    std::exclusive_scan(derivation_of_bucket_sizes.begin(), derivation_of_bucket_sizes.end(), 
+                        needed_items_left_of_each_bucket.begin(), 0, std::plus<>());
 
     // Now we can do the TwoSweep part 
     // We sweep from left to right
