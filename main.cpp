@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <span>
+#include <algorithm>
 
 // Bucket as data structure
 struct bucket_limits {
@@ -162,7 +163,8 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
 
     // All staged items should be grouped together now. Using Fisher-Yates here
     // Maybe use subspan here instad of using stack.size()
-    fisher_yates_shuffle(data_span, gen);
+    fisher_yates_shuffle(data_span.first(stack.size()), gen);
+    // std::shuffle(data_span.begin(), data_span.begin() + stack.size(), gen);
 
     // Now reverting the reordering
     while (stack.size() > 0) {
@@ -241,7 +243,7 @@ int main() {
     std::default_random_engine generator(seed);
 
     // vector size
-    int size = 1000000;
+    int size = 10000000;
     // amound of buckets
     constexpr std::size_t K = 16;
 
