@@ -75,22 +75,23 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     std::array<size_t, K> derivation_of_bucket_sizes {};
     std::array<size_t, K> needed_items_left_of_each_bucket {};
 
-    size_t num_staged_items = 0;
-    
+    std::size_t num_staged_items = 0;
+
     for (std::size_t i = 0; i < K; i++) {
         auto& bucket = buckets[i];
         num_of_placed_items[i] = bucket.num_placed();
         num_staged_items += bucket.num_staged();
     }
-
-    // Technically this line could be replaced by prob(k, 1) as 
-    // discrete_distribution already divides each element by its sum.
-    std::vector<double> prob(K, 1.0/K);
-    std::discrete_distribution<> distrib(prob.begin(), prob.end());
-    // I followed the example in the documentation (cppreference)
-    for (std::size_t i = 0; i < num_staged_items; i++) {
-        num_to_be_placed_items[distrib(gen)]++;
+    
+    // This line might be unnecessary 
+    std::size_t ns = num_staged_items;
+    for (std::size_t i = 0; i+1 < K; i++) {
+        auto binom = std::binomial_distribution{ns, 1.0/static_cast<double>(K - i)};
+        auto x = binom(gen);
+        num_to_be_placed_items[i] = x;
+        ns -= x;
     }
+    num_to_be_placed_items[K-1] = ns;
 
     // Calculate the sum of both vectors and store it in n_f
     // Here I could use the std::transform function
