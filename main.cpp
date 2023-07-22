@@ -48,20 +48,16 @@ void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets
     while (true) {
         int j = distrib(gen);
 
-        // Not sure if I need all those variables.
-        std::size_t s_0 = buckets[0].staged;
-        std::size_t s_j = buckets[j].staged;
-
         // Benchmark if this if slows down the code
         if (j != 0) {
             // They are helpful here
             using std::swap;
+            std::size_t s_0 = buckets[0].staged;
+            std::size_t s_j = buckets[j].staged;
             swap(data_span[s_0], data_span[s_j]);
         }
 
-        // Maybe just use the increment operator directly
-        s_j++;
-        buckets[j].staged = s_j;
+        buckets[j].staged++;
 
         if (buckets[j].staged == buckets[j].end) {
             break;
@@ -81,9 +77,9 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     size_t num_staged_items = 0;
 
     for (std::size_t i = 0; i < K; i++) {
-        num_of_placed_items[i] = buckets[i].num_placed();
-
-        num_staged_items += buckets[i].num_staged();
+        const auto& bucket = buckets[i];
+        num_of_placed_items[i] = bucket.num_placed();
+        num_staged_items += bucket.num_staged();
     }
 
     // Technically this line could be replaced by prob(k, 1) as 
