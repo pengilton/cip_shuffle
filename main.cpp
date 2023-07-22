@@ -17,21 +17,6 @@ struct bucket_limits {
 };
 
 
-// TODO: Remove some fisher yates implemantations because they are not needed
-// Fisher Yates
-template<typename T>
-void fisher_yates_shuffle(std::vector<T> &vec, std::default_random_engine &gen) {
-    for (int i = 0; i < vec.size() - 1; i++) {
-        // uniform sample from [i, N)
-        std::uniform_int_distribution<> distrib(i, vec.size()-1);
-        int j = distrib(gen);
-
-        // swapping of values -> might change this with std::swap
-        using std::swap;
-        swap(vec[i], vec[j]);
-    }
-}
-
 // Fisher-Yates
 // Swapping of elements could be its own function. Maybe there is a way to swap elements
 // in the standard library 
@@ -50,21 +35,6 @@ void fisher_yates_shuffle(std::span<T> data_span, std::default_random_engine &ge
     }
 }
 
-// There might be a better way than this. I only want to referene a subvector. 
-// Maybe iterators? For now, this should do the trick.
-template<typename T>
-void fisher_yates_shuffle(std::span<T> data_span, int size, std::default_random_engine &gen) {
-    for (int i = 0; i < size - 1; i++) {
-        // uniform sample from [i, N)
-        std::uniform_int_distribution<> distrib(i, size-1);
-        int j = distrib(gen);
-
-        // swapping of values -> might change this with std::swap
-        using std::swap;
-        swap(data_span[i], data_span[j]);
-    }
-}
-
 
 // Rough Scatter
 // Might have to swap size_t and typename
@@ -72,7 +42,6 @@ template<std::size_t K, typename T>
 void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets, std::default_random_engine &gen) {
     // Uniform distribution from 0 to k-1
     std::uniform_int_distribution<> distrib(0, K-1);
-
 
     // Lets remove bool = done and add if break
     while (true) {
@@ -193,7 +162,7 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
 
     // All staged items should be grouped together now. Using Fisher-Yates here
     // Maybe use subspan here instad of using stack.size()
-    fisher_yates_shuffle(data_span, stack.size(), gen);
+    fisher_yates_shuffle(data_span, gen);
 
     // Now reverting the reordering
     while (stack.size() > 0) {
@@ -204,42 +173,6 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     }
 }
 
-
-// We will implenet the sequential version of scatter shuffle
-// Might not be needed
-/* template<typename T>
-void scatter_shuffle(std::vector<T> &data_span, int k, std::default_random_engine &gen) {
-    // Might be unnecessary 
-    if (data_span.empty()) {
-        return;
-    }
-
-    int small = 256;
-    if (data_span.size() <= small) {
-        fisher_yates_shuffle(data_span, gen);
-        return;
-    }
-
-    // We have k buckets. A bucket is a vecotr for now. 
-    std::vector<T> buckets[k];
-    // Uniform distribution from 0 to k-1
-    std::uniform_int_distribution<> distrib(0, k-1);
-
-    for (int i = 0; i < data_span.size(); i++) {
-        // randomly choose a bucket
-        int j = distrib(gen);
-        // copies value to chosen bucket
-        buckets[j].push_back(data_span[i]);
-    }
-
-    int s = 0;
-    for (int j = 0; j < k; j++) {
-        scatter_shuffle(buckets[j], k, gen);
-        std::copy(buckets[j].begin(), buckets[j].end(), data_span.begin() + s);
-        s += buckets[j].size();
-    }
-}
- */
 
 // IpScShuf
 // First draft of the inplace scatter shuffle algorithm based on chapter 3
@@ -308,7 +241,7 @@ int main() {
     std::default_random_engine generator(seed);
 
     // vector size
-    int size = 100000;
+    int size = 1000000;
     // amound of buckets
     constexpr std::size_t K = 16;
 
