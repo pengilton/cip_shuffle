@@ -297,12 +297,12 @@ TEST(cip_shuffle_test, p_test) {
     std::array<std::array<std::size_t, size>, size> results {};
 
     for (std::size_t l = 0; l < sample_size; l++) {
-        // std::array<std::size_t, test_array_size> array {};
-        // std::iota(array.begin(), array.end(), 0);
-        // std::span array_span {array};
-        std::vector<std::size_t> V(size);
+        std::array<std::size_t, size> V {};
         std::iota(V.begin(), V.end(), 0);
-        std::span vector_span {V};
+        std::span vector_span {V.begin(), V.end()};
+        // std::vector<std::size_t> V(size);
+        // std::iota(V.begin(), V.end(), 0);
+        // std::span vector_span {V};
         inplace_scatter_shuffle<num_buckets>(vector_span, generator);
 
         for (std::size_t j = 0; j < size; j++) {
