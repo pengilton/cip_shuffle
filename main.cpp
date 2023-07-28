@@ -2,10 +2,13 @@
 #include <random>
 #include <array>
 #include <vector>
-#include <chrono>
 #include <span>
 #include <algorithm>
 #include <numeric>
+#include <cmath>
+// #include <chrono>
+#include <gtest/gtest.h>
+
 
 // Bucket as data structure
 struct bucket_limits {
@@ -179,7 +182,7 @@ void inplace_scatter_shuffle(std::span<T> data_span, std::default_random_engine 
     }
 
     // Change to 256
-    std::size_t small = 256;
+    std::size_t small = 16;
     if (data_span.size() <= small) {
         fisher_yates_shuffle(data_span, gen);
         return;
@@ -226,68 +229,143 @@ void print_vec(std::vector<T> &vec) {
     std::cout << std::endl;
 }
 
+template<typename T, std::size_t N>
+void my_print2(std::array<std::array<T, N>, N> &array) {
+    for (std::size_t i = 0; i < N; i++) {
+        for (std::size_t j = 0; j < N; j++) {
+            std::cout << array[i][j] << " ";   
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}
 
-int main() {
-    // Rabndom generator
-    std::random_device rd;
-    // use fixed seed to test
-    // int seed = 0;
-    int seed = rd();
-    std::default_random_engine generator(seed);
-
-    // vector size
-    int size = 10000000;
-    // amound of buckets
-    constexpr std::size_t K = 16;
-
-    // runs
-    int runs = 10;
-
-    for (int i = 0; i < runs; i++) {
-        std::vector<int> V(size);
-        std::iota(V.begin(), V.end(), 0);
-        
-        std::span span = std::span(V);
-
-        auto start = std::chrono::steady_clock::now();
-        // scatter_shuffle(V, k, generator);
-        inplace_scatter_shuffle<K>(span, generator);
-        auto end = std::chrono::steady_clock::now();
-
-        // print array after shuffle
-        // print_vec(V);
-
-        std::chrono::duration<double> elapsed_time = end - start;
-        std::cout << "Runtime: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() 
-                  << "ms" << std::endl;
+//-------------------------------------------------------------------------------------
+// Helper functions fot the tests 
+double nCk(double n, double k) {
+    double result = 1.0;
+    
+    if (k > n / 2) {
+        k = n - k;
     }
 
-    //-------------------------------------------
+    for (std::size_t i = 1; i <= k; i++) {
+        result *= (n + 1 - static_cast<double>(i));
+        result /= i;
+    }
 
-    // Let's do some testing if code is correct
-    // int sample_size = 10;
-    // std::vector<int> values(sample_size, 0);
-    // int runs = 1;
-
-    // for (int i = 0; i < runs; i++) {
-    //     std::vector<int> V(size);
-    //     std::iota(V.begin(), V.end(), 0);
-        
-    //     std::span span = std::span(V);
-
-    //     inplace_scatter_shuffle<K>(span, generator);
-
-    //     for (int j = 0; j < sample_size; j++) {
-    //         values[j] += V[j];
-    //     }
-    // }
-
-    // std::cout << "";
-
-    // for (int i = 0; i < sample_size; i++) {
-    //     std::cout << values[i] << " ";
-    // } 
-    // std::cout << std::endl;
-
-    // return 0;
+    return result;
 }
+
+double my_binom_pdf(std::size_t k, std::size_t n, double p) {
+    // double a = static_cast<double>(nCk(n, k));
+    // double b = std::pow(p, k);
+    // double c = std::pow(1-p, n-k);
+    return static_cast<double>(nCk(n, k)) * std::pow(p, k) * std::pow(1-p, n-k);
+}
+
+double my_binom_cdf(std::size_t k, std::size_t n, double p) {
+    double result = 0;
+
+    for (std::size_t i = 0; i <= k; i++) {
+        double x = my_binom_pdf(i, n, p);
+        result += x;
+    }
+
+    return result;
+}
+
+double calc_p_value(std::size_t result, std::size_t sample_size, double prop) {
+    double left_tail = my_binom_cdf(result, sample_size, prop);
+    double right_tail = 1 - left_tail + my_binom_pdf(result, sample_size, prop);
+    return 2 * std::min(left_tail, right_tail);
+}
+
+
+TEST(cip_shuffle_test, p_test) {
+    std::random_device rd;
+    int seed = 0;
+    // seed = rd();
+    std::default_random_engine generator(seed);
+
+    double confidence = 0.05;
+
+    constexpr std::size_t num_buckets = 8;
+    constexpr std::size_t size = 50;
+
+    std::size_t sample_size = size * size * size;
+    std::array<std::array<std::size_t, size>, size> results {};
+
+    for (std::size_t l = 0; l < sample_size; l++) {
+        // std::array<std::size_t, test_array_size> array {};
+        // std::iota(array.begin(), array.end(), 0);
+        // std::span array_span {array};
+        std::vector<std::size_t> V(size);
+        std::iota(V.begin(), V.end(), 0);
+        std::span vector_span {V};
+        inplace_scatter_shuffle<num_buckets>(vector_span, generator);
+
+        for (std::size_t j = 0; j < size; j++) {
+            std::size_t i = vector_span[j];
+            results[i][j]++;
+        }
+    }
+
+    for (std::size_t i = 0; i < size; i++) {
+        for (std::size_t j = 0; j < size; j++) {
+            double p_value = calc_p_value(results[i][j], sample_size, 1.0 / static_cast<double>(size));
+            bool reject = false;
+            if (p_value < confidence / static_cast<double>(std::pow(size, 2))) {
+                reject = true;
+            }
+            EXPECT_EQ(false, reject);
+            // ASSERT_EQ(true, reject) << "Error for number: " << i << " at pos: " << j;
+        }
+    }
+}
+
+
+/* int main() {
+    std::random_device rd;
+    int seed = 0;
+    // seed = rd();
+    std::default_random_engine generator(seed);
+
+    double confidence = 0.05;
+
+    constexpr std::size_t test_array_size = 10;
+    constexpr std::size_t num_buckets = 4;
+
+    std::size_t sample_size = test_array_size * test_array_size * test_array_size;
+
+    std::array<std::array<std::size_t, test_array_size>, test_array_size> results {};
+
+    for (std::size_t l = 0; l < sample_size; l++) {
+        // std::array<std::size_t, test_array_size> array {};
+        // std::iota(array.begin(), array.end(), 0);
+        // std::span array_span {array};
+        std::vector<std::size_t> V(test_array_size);
+        std::iota(V.begin(), V.end(), 0);
+        std::span vector_span {V};
+        inplace_scatter_shuffle<num_buckets>(vector_span, generator);
+        // fisher_yates_shuffle(vector_span, generator);
+
+        for (std::size_t j = 0; j < test_array_size; j++) {
+            std::size_t i = vector_span[j];
+            results[i][j]++;
+        }
+    }
+
+    for (std::size_t i = 0; i < test_array_size; i++) {
+        for (std::size_t j = 0; j < test_array_size; j++) {
+            double p_value = calc_p_value(results[i][j], sample_size, 1.0 / static_cast<double>(test_array_size));
+            if (p_value < confidence / static_cast<double>(std::pow(test_array_size, 2))) {
+                std::cout << "Error at: " << i << ", " << j << "\n";
+            }
+        }
+    }
+
+    my_print2(results);
+
+    return 0;
+} */
