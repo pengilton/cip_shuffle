@@ -1,51 +1,30 @@
 #include <gtest/gtest.h>
+#include <boost/math/distributions/binomial.hpp>
+    using boost::math::binomial;
 
 #include <cip_shuffle.hpp>
 
-double nCk(double n, double k) {
-    double result = 1.0;
-    
-    if (k > n / 2) {
-        k = n - k;
-    }
-
-    for (std::size_t i = 1; i <= k; i++) {
-        result *= (n + 1 - static_cast<double>(i));
-        result /= i;
-    }
-
-    return result;
-}
-
-double my_binom_pdf(std::size_t k, std::size_t n, double p) {
-    // double a = static_cast<double>(nCk(n, k));
-    // double b = std::pow(p, k);
-    // double c = std::pow(1-p, n-k);
-    return static_cast<double>(nCk(n, k)) * std::pow(p, k) * std::pow(1-p, n-k);
-}
-
-double my_binom_cdf(std::size_t k, std::size_t n, double p) {
-    double result = 0;
-
-    for (std::size_t i = 0; i <= k; i++) {
-        double x = my_binom_pdf(i, n, p);
-        result += x;
-    }
-
-    return result;
-}
 
 double calc_p_value(std::size_t result, std::size_t sample_size, double prop) {
-    double left_tail = my_binom_cdf(result, sample_size, prop);
-    double right_tail = 1 - left_tail + my_binom_pdf(result, sample_size, prop);
-    return 2 * std::min(left_tail, right_tail);
+    // Boost documentation advises to use try/catch blocks.
+    try {
+        // Creating the binomial distribution
+        binomial binom(sample_size, prop);
+        // One-sided left-tail test-statistic distribution
+        double left_tail = cdf(binom, result);
+        // One-sided right-tail test-statistic distribution. Note that complement of cdf 
+        // means more than k successes.
+        double right_tail = cdf(complement(binom, result)) + pdf(binom, result);
+        return 2 * std::min(left_tail, right_tail);
+    } catch(const std::exception& e) {
+        std::cout << "\n""Message from thrown exception was:\n " << e.what() << "\n";
+        throw;
+    }
 }
 
 
 TEST(cip_shuffle_test, p_test) {
-    std::random_device rd;
     int seed = 0;
-    // seed = rd();
     std::default_random_engine generator(seed);
 
     double confidence = 0.05;
@@ -57,9 +36,6 @@ TEST(cip_shuffle_test, p_test) {
     std::array<std::array<std::size_t, size>, size> results {};
 
     for (std::size_t l = 0; l < sample_size; l++) {
-        // std::array<std::size_t, test_array_size> array {};
-        // std::iota(array.begin(), array.end(), 0);
-        // std::span array_span {array};
         std::vector<std::size_t> V(size);
         std::iota(V.begin(), V.end(), 0);
         std::span vector_span {V};
@@ -79,7 +55,6 @@ TEST(cip_shuffle_test, p_test) {
                 reject = true;
             }
             EXPECT_EQ(false, reject);
-            // ASSERT_EQ(true, reject) << "Error for number: " << i << " at pos: " << j;
         }
     }
 }
