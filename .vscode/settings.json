@@ -89,7 +89,12 @@
         "fstream": "cpp",
         "list": "cpp",
         "set": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "cfenv": "cpp",
+        "strstream": "cpp",
+        "source_location": "cpp",
+        "cinttypes": "cpp",
+        "codecvt": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }
