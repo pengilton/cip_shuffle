@@ -14,7 +14,8 @@ double calc_p_value(std::size_t result, std::size_t sample_size, double prop) {
         double left_tail = cdf(binom, result);
         // One-sided right-tail test-statistic distribution. Note that complement of cdf 
         // means more than k successes.
-        double right_tail = cdf(complement(binom, result)) + pdf(binom, result);
+        // double right_tail = cdf(complement(binom, result)) + pdf(binom, result);
+        double right_tail = (result == 0) ? (1) : (1 - cdf(binom, result - 1));
         return 2 * std::min(left_tail, right_tail);
     } catch(const std::exception& e) {
         std::cout << "\n""Message from thrown exception was:\n " << e.what() << "\n";
@@ -31,13 +32,15 @@ void my_print(std::vector<std::vector<std::size_t>> &matrix) {
     }
 }
 
+//-------------------------------------------------------------------------------------------------
+
 class CipShuffleTestFixture : public testing::TestWithParam<std::size_t> {
     protected:
         int seed;
         double confidence;
 
         void SetUp() override {
-            seed = 0;
+            seed = 12345;
             confidence = 0.05;
         }
 };
@@ -142,3 +145,4 @@ INSTANTIATE_TEST_SUITE_P(CipShuffleTestEven,
 INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
                          CipShuffleTestFixture,
                          testing::Values(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20));
+                         // 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20

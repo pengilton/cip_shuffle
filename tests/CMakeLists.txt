@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
-add_executable(cip_shuffle_test cip_shuffle_test.cpp)
+add_executable(statistical_tests statistical_tests.cpp)
 
 find_package(Boost 1.82 REQUIRED)
 if(Boost_FOUND)
@@ -8,10 +8,10 @@ if(Boost_FOUND)
 endif()
 
 target_link_libraries(
-    cip_shuffle_test
+    statistical_tests
     GTest::gtest_main
     cip_shuffle
 )
 
 include(GoogleTest)
-gtest_discover_tests(cip_shuffle_test)
+gtest_discover_tests(statistical_tests)
