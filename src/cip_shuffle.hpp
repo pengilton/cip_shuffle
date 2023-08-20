@@ -182,7 +182,7 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Change to 256
-    const std::size_t small = 8;
+    const std::size_t small = 4;
     if (data_span.size() < small) {
         // fisher_yates_shuffle(data_span, gen);
         std::shuffle(data_span.begin(), data_span.end(), gen);

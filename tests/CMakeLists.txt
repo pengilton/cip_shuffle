@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
-add_executable(statistical_tests statistical_tests.cpp)
+add_executable(chi_squared_test chi_squared_test.cpp)
 
 find_package(Boost 1.82 REQUIRED)
 if(Boost_FOUND)
@@ -8,10 +8,10 @@ if(Boost_FOUND)
 endif()
 
 target_link_libraries(
-    statistical_tests
+    chi_squared_test
     GTest::gtest_main
     cip_shuffle
 )
 
 include(GoogleTest)
-gtest_discover_tests(statistical_tests)
+gtest_discover_tests(chi_squared_test)
