@@ -74,9 +74,11 @@ template<std::size_t K, typename T, typename RNG>
 void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
     std::array<size_t, K> num_of_placed_items {};
     std::array<size_t, K> num_to_be_placed_items {};
-    std::array<size_t, K> total_bucket_sizes {};
-    std::array<size_t, K> derivation_of_bucket_sizes {};
-    std::array<size_t, K> needed_items_left_of_each_bucket {};
+    std::array<size_t, K> final_bucket_sizes {};
+    // We opt for long long as we need negative numbers here. There is still an issue that size_t 
+    // may have larger values than long long hence overflow. We ignore this for now.
+    // std::array<long long, K> derivation_of_bucket_sizes {};
+    // std::array<long long, K> needed_items_left_of_each_bucket {};
 
     std::size_t num_staged_items = 0;
 
@@ -99,25 +101,28 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     // Calculate the sum of both vectors and store it in n_f
     // Here I could use the std::transform function
     for (std::size_t i = 0; i < K; i++) {
-        total_bucket_sizes[i] = num_of_placed_items[i] + num_to_be_placed_items[i];
+        final_bucket_sizes[i] = num_of_placed_items[i] + num_to_be_placed_items[i];
     }
 
+    /*
+    // Might not be needed!!!
     for (std::size_t i = 0; i < K; i++) {
         // I use the actual bucket size instead of the mean
-        derivation_of_bucket_sizes[i] = total_bucket_sizes[i] - buckets[i].num_total();
+        derivation_of_bucket_sizes[i] = final_bucket_sizes[i] - buckets[i].num_total();
     }
 
+    // Might not be needed!!!
     // Now we fill the vector needed_items_left_of_each_bucket
     std::exclusive_scan(derivation_of_bucket_sizes.begin(), derivation_of_bucket_sizes.end(), 
                         needed_items_left_of_each_bucket.begin(), 0, std::plus<>());
-
+    
     // Now we can do the TwoSweep part 
     // We sweep from left to right
     for (std::size_t i = 0; i+1 < K; i++) {
         // TODO: Own function! See rust implementation
         // If bucket Bi is too large by more than ci we move excess staged items into
         // the staging area of bucket i+1
-        while (buckets[i].num_total() > needed_items_left_of_each_bucket[i] + total_bucket_sizes[i]) {
+        while (buckets[i].num_total() > needed_items_left_of_each_bucket[i] + final_bucket_sizes[i]) {
             // Swapping the last staged item of bucket i with the last placed item of bucket i+1
             using std::swap;
             swap(data_span[buckets[i].end - 1], data_span[buckets[i+1].staged - 1]);
@@ -126,11 +131,28 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
             buckets[i+1].begin--;
             buckets[i+1].staged--;
         }
+    } */
+
+    // We sweep from left to right. Similar to Penschuck's code. We don't precalcute the C values.
+    long long growth_needed_left = 0;
+    for (std::size_t i = 0; i+1 < K; i++) {
+        size_t reservation_for_left = std::max(growth_needed_left, static_cast<long long>(0));
+        size_t target_with_reservation = final_bucket_sizes[i] + reservation_for_left;
+        while (buckets[i].num_total() > target_with_reservation) {
+            // Swapping the last staged item of bucket i with the last placed item of bucket i+1
+            using std::swap;
+            swap(data_span[buckets[i].end - 1], data_span[buckets[i+1].staged - 1]);
+            // Adjusting the buckets
+            buckets[i].end--;
+            buckets[i+1].begin--;
+            buckets[i+1].staged--;
+        }
+        growth_needed_left += final_bucket_sizes[i] - buckets[i].num_total();
     }
 
     // We sweep from right to left
     for (size_t i = K-1; i > 0; i--) {
-        while (buckets[i].num_total() > total_bucket_sizes[i]) {
+        while (buckets[i].num_total() > final_bucket_sizes[i]) {
             // Swapping first placed item in bucket i with the first staged item in bucket i
             using std::swap;
             swap(data_span[buckets[i].begin], data_span[buckets[i].staged]);
@@ -182,7 +204,7 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Change to 256
-    const std::size_t small = 4;
+    const std::size_t small = 80;
     if (data_span.size() < small) {
         // fisher_yates_shuffle(data_span, gen);
         std::shuffle(data_span.begin(), data_span.end(), gen);
