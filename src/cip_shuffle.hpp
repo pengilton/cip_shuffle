@@ -149,6 +149,29 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
         }
         growth_needed_left += final_bucket_sizes[i] - buckets[i].num_total();
     }
+    
+    /* long long growth_needed_left = 0;
+    for (std::size_t i = 0; i+1 < K; i++) {
+        size_t reservation_for_left = std::max(growth_needed_left, static_cast<long long>(0));
+        size_t target_with_reservation = final_bucket_sizes[i] + reservation_for_left;
+        if (buckets[i].num_total() > target_with_reservation) {
+            size_t num_to_move = buckets[i].num_total() - target_with_reservation;
+            // We check if there are enough placed items in bucket i+1.
+            if (num_to_move > buckets[i+1].num_placed()) {
+                std::swap_ranges(data_span.begin() + buckets[i].end - num_to_move, 
+                                 data_span.begin() + buckets[i].end,
+                                 data_span.begin() + buckets[i+1].begin);
+            } else {
+                std::swap_ranges(data_span.begin() + buckets[i].end - num_to_move, 
+                                 data_span.begin() + buckets[i].end,
+                                 data_span.begin() + buckets[i+1].staged - num_to_move);
+            }
+            buckets[i].end -= num_to_move;
+            buckets[i+1].begin -= num_to_move;
+            buckets[i+1].staged -= num_to_move;
+        }
+        growth_needed_left += final_bucket_sizes[i] - buckets[i].num_total();
+    } */
 
     // We sweep from right to left
     for (size_t i = K-1; i > 0; i--) {
@@ -204,7 +227,7 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Change to 256
-    const std::size_t small = 80;
+    const std::size_t small = 8;
     if (data_span.size() < small) {
         // fisher_yates_shuffle(data_span, gen);
         std::shuffle(data_span.begin(), data_span.end(), gen);

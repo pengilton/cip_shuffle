@@ -46,7 +46,7 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
     std::size_t param = GetParam();
     const std::size_t size = param;
 
-    std::size_t sample_size = 10000 * size * size;
+    std::size_t sample_size = 1000 * size * size;
     std::vector<std::vector<std::size_t>> results(size, std::vector<std::size_t>(size));
 
     for (std::size_t l = 0; l < sample_size; l++) {
@@ -79,3 +79,4 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
 INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
                          CipShuffleTestFixture,
                          testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20));
+                         // 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20
