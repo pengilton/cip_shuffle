@@ -7,8 +7,8 @@ int main() {
     std::mt19937_64 generator(seed);
 
     constexpr std::size_t num_buckets = 4;
-    const std::size_t size = 100000000;
     const std::size_t runs = 10;
+    const std::size_t size = 100000000;
 
     for (std::size_t i = 0; i < runs + 1; i++) {
         std::vector<std::size_t> vec(size);
