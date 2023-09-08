@@ -21,6 +21,7 @@ std::filesystem::path create_csv_path(size_t num_buckets, size_t threshold) {
     std::string filename = std::string(buffer) 
                            + "-nb=" + std::to_string(num_buckets) 
                            + "-th=" + std::to_string(threshold)
+                           + "-cpp"
                            + ".csv";
 
     // Creates full path. Should be plattform independent
@@ -50,12 +51,16 @@ int main() {
 
         for (std::size_t i = 0; i < max_exp; i++) {
             std::size_t size = std::pow(2, i);
-            std::cout << "Setting size to = " << size << "\n";
+            std::cout << std::setw(static_cast<size_t>(std::log10(max_exp))) << i + 1 << "/" << max_exp << " ";
+            std::cout << "Setting size = " << std::setw(static_cast<size_t>(std::log10(std::pow(2, max_exp)))) << size << "\n";
 
             for (std::size_t j = 0; j < runs + 1; j++) {
+                // auto start_setup = std::chrono::steady_clock::now();
                 std::vector<std::size_t> vec(size);
                 std::iota(vec.begin(), vec.end(), 0);
                 std::span vector_span {vec};
+                // auto end_setup = std::chrono::steady_clock::now();
+                // auto setup_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_setup - start_setup);
 
                 auto start = std::chrono::steady_clock::now();
                 inplace_scatter_shuffle<num_buckets>(vector_span, generator);
@@ -68,13 +73,19 @@ int main() {
                     continue;
                 }
 
-                // std::cout << "Duration of run " << std::setw(2) << j << ": " << std::setw(18) << duration.count() << " ns" << "\n";
                 my_file << num_buckets << ",";
                 my_file << threshold << ",";
                 my_file << j << ",";
                 my_file << size << ",";
                 my_file << duration.count() << "\n";
+
+                std::cout << std::setw(2) << j << "/" << runs << " ";
+                // std::cout << "Setup:   " << std::setw(18) << setup_duration.count() << " ns" << "\n";
+                // std::cout << std::setw(6) << " ";
+                std::cout << "Runtime: " << std::setw(18) << duration.count() << " ns" << "\n";
             }
+
+            std::cout << "\n";
         }
 
         std::cout << "Benchmark done!" << std::endl;
