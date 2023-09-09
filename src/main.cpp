@@ -37,7 +37,8 @@ int main() {
     constexpr std::size_t num_buckets = 4;
     constexpr std::size_t threshold = 256;
     const std::size_t runs = 10;
-    const std::size_t max_exp = 16;
+    const std::size_t min_exp = 0;  //inclusive
+    const std::size_t max_exp = 30; //exclusive
 
     std::filesystem::path path = create_csv_path(num_buckets, threshold);
 
@@ -49,10 +50,11 @@ int main() {
         // Creating CSV headers
         my_file << "buckets," << "threshold," << "run," << "integers," << "duration [ns]" << "\n";
 
-        for (std::size_t i = 0; i < max_exp; i++) {
+        for (std::size_t i = min_exp; i < max_exp; i++) {
             std::size_t size = std::pow(2, i);
             std::cout << std::setw(static_cast<size_t>(std::log10(max_exp))) << i + 1 << "/" << max_exp << " ";
-            std::cout << "Setting size = " << std::setw(static_cast<size_t>(std::log10(std::pow(2, max_exp)))) << size << "\n";
+            std::cout << "Setting size = " << std::setw(static_cast<size_t>(std::log10(std::pow(2, max_exp)))) << size;
+            std::cout << " " << "which needs " << sizeof(size_t) * size << " Bytes of storage.\n";
 
             for (std::size_t j = 0; j < runs + 1; j++) {
                 // auto start_setup = std::chrono::steady_clock::now();
