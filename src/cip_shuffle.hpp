@@ -227,8 +227,8 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Change to 256
-    constexpr std::size_t THRESHOLD = 256;
-    if (data_span.size() < THRESHOLD) {
+    constexpr std::size_t THRESHOLD = 262144;
+    if (data_span.size() <= THRESHOLD) {
         // fisher_yates_shuffle(data_span, gen);
         std::shuffle(data_span.begin(), data_span.end(), gen);
         return;
