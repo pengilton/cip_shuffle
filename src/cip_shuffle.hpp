@@ -22,9 +22,7 @@ struct bucket_limits {
 };
 
 
-// Fisher-Yates
-// Swapping of elements could be its own function. Maybe there is a way to swap elements
-// in the standard library 
+// A simple Fisher-Yates implementation
 template<typename T, typename RNG>
 void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     if (!data_span.empty()) {
@@ -42,19 +40,16 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
 
 
 // Rough Scatter
-// Might have to swap size_t and typename
 template<std::size_t K, typename T, typename RNG>
 void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
     // Uniform distribution from 0 to k-1
     std::uniform_int_distribution<> distrib(0, K-1);
 
-    // Lets remove bool = done and add if break
     while (true) {
         int j = distrib(gen);
 
-        // Benchmark if this if slows down the code
+        // Benchmark if this slows down the code
         if (j != 0) {
-            // They are helpful here
             using std::swap;
             std::size_t s_0 = buckets[0].staged;
             std::size_t s_j = buckets[j].staged;
@@ -75,10 +70,6 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     std::array<size_t, K> num_of_placed_items {};
     std::array<size_t, K> num_to_be_placed_items {};
     std::array<size_t, K> final_bucket_sizes {};
-    // We opt for long long as we need negative numbers here. There is still an issue that size_t 
-    // may have larger values than long long hence overflow. We ignore this for now.
-    // std::array<long long, K> derivation_of_bucket_sizes {};
-    // std::array<long long, K> needed_items_left_of_each_bucket {};
 
     std::size_t num_staged_items = 0;
 
@@ -103,35 +94,6 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     for (std::size_t i = 0; i < K; i++) {
         final_bucket_sizes[i] = num_of_placed_items[i] + num_to_be_placed_items[i];
     }
-
-    /*
-    // Might not be needed!!!
-    for (std::size_t i = 0; i < K; i++) {
-        // I use the actual bucket size instead of the mean
-        derivation_of_bucket_sizes[i] = final_bucket_sizes[i] - buckets[i].num_total();
-    }
-
-    // Might not be needed!!!
-    // Now we fill the vector needed_items_left_of_each_bucket
-    std::exclusive_scan(derivation_of_bucket_sizes.begin(), derivation_of_bucket_sizes.end(), 
-                        needed_items_left_of_each_bucket.begin(), 0, std::plus<>());
-    
-    // Now we can do the TwoSweep part 
-    // We sweep from left to right
-    for (std::size_t i = 0; i+1 < K; i++) {
-        // TODO: Own function! See rust implementation
-        // If bucket Bi is too large by more than ci we move excess staged items into
-        // the staging area of bucket i+1
-        while (buckets[i].num_total() > needed_items_left_of_each_bucket[i] + final_bucket_sizes[i]) {
-            // Swapping the last staged item of bucket i with the last placed item of bucket i+1
-            using std::swap;
-            swap(data_span[buckets[i].end - 1], data_span[buckets[i+1].staged - 1]);
-            // Adjusting the buckets
-            buckets[i].end--;
-            buckets[i+1].begin--;
-            buckets[i+1].staged--;
-        }
-    } */
 
     // We sweep from left to right. Similar to Penschuck's code. We don't precalcute the C values.
     long long growth_needed_left = 0;
@@ -202,8 +164,7 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
         }
     }
 
-    // All staged items should be grouped together now. Using Fisher-Yates here
-    // Maybe use subspan here instad of using stack.size()
+    // All staged items should be grouped together now. 
     // fisher_yates_shuffle(data_span.first(stack.size()), gen);
     std::shuffle(data_span.begin(), data_span.begin() + stack.size(), gen);
 
@@ -227,16 +188,13 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Change to 256
-    constexpr std::size_t THRESHOLD = 262144;
+    constexpr std::size_t THRESHOLD = 1073741824;
     if (data_span.size() <= THRESHOLD) {
-        // fisher_yates_shuffle(data_span, gen);
-        std::shuffle(data_span.begin(), data_span.end(), gen);
+        fisher_yates_shuffle(data_span, gen);
+        // std::shuffle(data_span.begin(), data_span.end(), gen);
         return;
     }
 
-    // An vector which contains the triples of indices (bi, si, ei) but instead of having an 
-    // array of triples we just put them next to each other. Hence each block of three elements in 
-    // the array is one triple.
     // Maybe I should creade a small fucntion which creates the buckets to make this function 
     // a bit cleaner.
     std::array<bucket_limits, K> buckets;

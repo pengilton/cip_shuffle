@@ -35,7 +35,7 @@ int main() {
     std::mt19937_64 generator(seed);
 
     constexpr std::size_t num_buckets = 4;
-    constexpr std::size_t threshold = 262144;
+    constexpr std::size_t threshold = 1073741824;   // 262144
     const std::size_t runs = 10;
     const std::size_t min_exp = 0;  //inclusive
     const std::size_t max_exp = 30; //exclusive
