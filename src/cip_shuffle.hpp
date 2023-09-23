@@ -38,6 +38,62 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     }
 }
 
+// A function which puts the staged items into one continuous segment.
+// Ideally the staged items will fit into one bucket.
+template<size_t K, typename T, typename RNG> 
+void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
+    size_t stash_size = 0;
+    for (auto& bucket : buckets) {
+        stash_size += bucket.num_staged();
+    }
+
+    if (stash_size <= buckets[K - 1].num_total()) {
+        compact_stashes(data_span, buckets, stash_size);
+        std::shuffle(data_span.end() - stash_size, data_span.end(), gen);
+        compact_stashes(data_span, buckets, stash_size);
+    } else {
+        // Now we can assign the remaining staged items. We move the staged
+        // items together. There migh be a better way here as well but we assume that
+        // we won't have to fall back to this part of the code that often.
+        std::vector<std::size_t> stack;
+        std::size_t i = 0;
+        for (std::size_t j = 0; j < K; j++) {
+            std::size_t l = buckets[j].staged;
+            while (l < buckets[j].end) {
+                using std::swap;
+                swap(data_span[i], data_span[l]);
+                stack.push_back(l);
+                i++;
+                l++;
+            }
+        }
+
+        // All staged items should be grouped together now. 
+        // fisher_yates_shuffle(data_span.first(stack.size()), gen);
+        std::shuffle(data_span.begin(), data_span.begin() + stack.size(), gen);
+
+        // Now reverting the reordering
+        while (stack.size() > 0) {
+            i--;
+            using std::swap;
+            swap(data_span[i], data_span[stack.back()]);
+            stack.pop_back();
+        }
+    }
+}
+
+template<size_t K, typename T> 
+void compact_stashes(std::span<T> data_span, std::array<bucket_limits, K> &buckets, size_t stash_size) {
+    size_t remaining_items = stash_size;
+    for (size_t i = 0; i < K - 1; i++) {
+        bucket_limits bucket = buckets[i];
+        std::swap_ranges(data_span.begin() + bucket.staged, 
+                         data_span.begin() + bucket.end, 
+                         data_span.end() - remaining_items);
+        remaining_items -= bucket.num_staged();
+    }
+}
+
 
 // Rough Scatter
 template<std::size_t K, typename T, typename RNG>
@@ -148,33 +204,8 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
         }
     }
 
-    // TODO: Get rid of stack as it is not needed. 
-    // Now we can assign the remaining staged items. We move the staged
-    // items together.
-    std::vector<std::size_t> stack;
-    std::size_t i = 0;
-    for (std::size_t j = 0; j < K; j++) {
-        std::size_t l = buckets[j].staged;
-        while (l < buckets[j].end) {
-            using std::swap;
-            swap(data_span[i], data_span[l]);
-            stack.push_back(l);
-            i++;
-            l++;
-        }
-    }
-
-    // All staged items should be grouped together now. 
-    // fisher_yates_shuffle(data_span.first(stack.size()), gen);
-    std::shuffle(data_span.begin(), data_span.begin() + stack.size(), gen);
-
-    // Now reverting the reordering
-    while (stack.size() > 0) {
-        i--;
-        using std::swap;
-        swap(data_span[i], data_span[stack.back()]);
-        stack.pop_back();
-    }
+    // Now we shuffle the stashes
+    shuffle_stashes(data_span, buckets, gen);
 }
 
 
@@ -188,10 +219,10 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Change to 256
-    constexpr std::size_t THRESHOLD = 1073741824;
+    constexpr std::size_t THRESHOLD = 8;
     if (data_span.size() <= THRESHOLD) {
-        fisher_yates_shuffle(data_span, gen);
-        // std::shuffle(data_span.begin(), data_span.end(), gen);
+        // fisher_yates_shuffle(data_span, gen);
+        std::shuffle(data_span.begin(), data_span.end(), gen);
         return;
     }
 
@@ -205,10 +236,10 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     // Rough Scatter
-    rough_scatter<K>(data_span, buckets, gen);
+    rough_scatter(data_span, buckets, gen);
 
     // Fine Scatter which does the twosweap thing and assigns the last itmes 
-    fine_scatter<K>(data_span, buckets, gen);
+    fine_scatter(data_span, buckets, gen);
 
     // Squentially calling inplace_scatter_schuffle on each bucket.
     // This part should be hhighly parallelisable.
