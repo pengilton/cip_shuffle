@@ -34,18 +34,16 @@ int main() {
     int seed = 12345;
     std::mt19937_64 generator(seed);
 
-    constexpr std::size_t num_buckets = 4;
-    constexpr std::size_t threshold = 1073741824;   // 262144
     const std::size_t runs = 10;
     const std::size_t min_exp = 0;  //inclusive
     const std::size_t max_exp = 30; //exclusive
 
-    std::filesystem::path path = create_csv_path(num_buckets, threshold);
+    std::filesystem::path path = create_csv_path(NUM_BUCKETS, THRESHOLD);
 
     std::fstream my_file;
     my_file.open(path, std::ios::out);
     if (my_file.is_open()) {
-        std::cout << "Starting benchmark with " << num_buckets << " buckets...\n";
+        std::cout << "Starting benchmark with " << NUM_BUCKETS << " buckets...\n";
 
         // Creating CSV headers
         my_file << "buckets," << "threshold," << "run," << "integers," << "duration [ns]" << "\n";
@@ -65,7 +63,7 @@ int main() {
                 // auto setup_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_setup - start_setup);
 
                 auto start = std::chrono::steady_clock::now();
-                inplace_scatter_shuffle<num_buckets>(vector_span, generator);
+                inplace_scatter_shuffle(vector_span, generator);
                 auto end = std::chrono::steady_clock::now();
 
                 auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
@@ -75,8 +73,8 @@ int main() {
                     continue;
                 }
 
-                my_file << num_buckets << ",";
-                my_file << threshold << ",";
+                my_file << NUM_BUCKETS << ",";
+                my_file << THRESHOLD << ",";
                 my_file << j << ",";
                 my_file << size << ",";
                 my_file << duration.count() << "\n";

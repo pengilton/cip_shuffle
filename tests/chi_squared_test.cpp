@@ -39,8 +39,6 @@ class CipShuffleTestFixture : public testing::TestWithParam<std::size_t> {
 };
 
 TEST_P(CipShuffleTestFixture, IndependenceTest) {
-    constexpr std::size_t num_buckets = 4;
-
     std::mt19937_64 generator(seed);
 
     std::size_t param = GetParam();
@@ -53,7 +51,7 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
         std::vector<std::size_t> V(size);
         std::iota(V.begin(), V.end(), 0);
         std::span vector_span {V};
-        inplace_scatter_shuffle<num_buckets>(vector_span, generator);
+        inplace_scatter_shuffle(vector_span, generator);
 
         for (std::size_t j = 0; j < size; j++) {
             std::size_t i = vector_span[j];

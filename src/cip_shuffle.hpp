@@ -9,6 +9,9 @@
 #include <numeric>
 #include <cmath>
 
+constexpr std::size_t LOG_NUM_BUCKETS = 7;                  // Default is 7;
+constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
+constexpr std::size_t THRESHOLD = 1 << 18;                   // Default is 18; 8, 12, 18
 
 // Bucket as data structure
 struct bucket_limits {
@@ -35,6 +38,34 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
             using std::swap;
             swap(data_span[i], data_span[j]);
         }
+    }
+}
+
+// Buffered version of Fisher-Yates as in Daniel Lemire's paper.
+template<typename T, typename RNG>
+void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
+    constexpr std::size_t BUFFER_SIZE = 1 << 2;
+
+    std::size_t i = data_span.size() - 1;
+    std::array<std::size_t, BUFFER_SIZE> buffer{};
+
+    for (; i >= BUFFER_SIZE; i -= BUFFER_SIZE) {
+        for (std::size_t k = 0; k < BUFFER_SIZE; k++) {
+            std::uniform_int_distribution<> distrib(0, i - k);
+            std::size_t j = distrib(gen);
+            buffer[k] = j;
+        }
+        for (std::size_t k = 0; k < BUFFER_SIZE; k++) {
+            using std::swap;
+            swap(data_span[i - k], data_span[buffer[k]]);
+        }
+    }
+    while (i > 0) {
+        std::uniform_int_distribution<> distrib(0, i);
+        std::size_t j = distrib(gen);
+        using std::swap;
+        swap(data_span[i], data_span[j]);
+        i--;
     }
 }
 
@@ -211,28 +242,27 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
 
 // IpScShuf
 // First draft of the inplace scatter shuffle algorithm based on chapter 3
-template<std::size_t K, typename T, typename RNG>
+template<typename T, typename RNG>
 void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     // Might be unnecessary
     if (data_span.empty()) {
         return;
     }
 
-    // Change to 256
-    constexpr std::size_t THRESHOLD = 8;
     if (data_span.size() <= THRESHOLD) {
         // fisher_yates_shuffle(data_span, gen);
-        std::shuffle(data_span.begin(), data_span.end(), gen);
+        buffered_fisher_yates_shuffle(data_span, gen);
+        // std::shuffle(data_span.begin(), data_span.end(), gen);
         return;
     }
 
     // Maybe I should creade a small fucntion which creates the buckets to make this function 
     // a bit cleaner.
-    std::array<bucket_limits, K> buckets;
-    for (std::size_t i = 0; i < K; i++) {
-        buckets[i].begin = static_cast<std::size_t>(data_span.size()) * i / K;
-        buckets[i].staged = static_cast<std::size_t>(data_span.size()) * i / K;;
-        buckets[i].end = static_cast<std::size_t>(data_span.size()) * (i+1) / K;
+    std::array<bucket_limits, NUM_BUCKETS> buckets;
+    for (std::size_t i = 0; i < NUM_BUCKETS; i++) {
+        buckets[i].begin = static_cast<std::size_t>(data_span.size()) * i / NUM_BUCKETS;
+        buckets[i].staged = static_cast<std::size_t>(data_span.size()) * i / NUM_BUCKETS;;
+        buckets[i].end = static_cast<std::size_t>(data_span.size()) * (i+1) / NUM_BUCKETS;
     }
 
     // Rough Scatter
@@ -243,10 +273,10 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
 
     // Squentially calling inplace_scatter_schuffle on each bucket.
     // This part should be hhighly parallelisable.
-    for (std::size_t i = 0; i < K; i++) {
+    for (std::size_t i = 0; i < NUM_BUCKETS; i++) {
         // Might be unnecessary to create a span
         std::span bucket_span = data_span.subspan(buckets[i].begin, buckets[i].num_total());
-        inplace_scatter_shuffle<K>(bucket_span, gen);
+        inplace_scatter_shuffle(bucket_span, gen);
     }
 }
 
