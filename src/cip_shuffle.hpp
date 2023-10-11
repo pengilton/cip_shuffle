@@ -24,6 +24,25 @@ struct bucket_limits {
     std::size_t num_staged() { return end - staged; } 
 };
 
+// Note that gen is a 64 bit generator
+template<typename RNG>
+std::uint32_t my_uniform_int_distribution_32(std::uint32_t s, RNG &gen) {
+    // This should generate a 64 Bit word using any generator. We 
+    // save it as a 32 Bit word. x should be random from [0, 2^32).
+    std::uint32_t x = std::uint32_t(gen());
+    std::uint64_t m = static_cast<std::uint64_t>(x) * static_cast<std::uint64_t>(s);
+    std::uint32_t l = std::uint32_t(m);
+    if (l < s) {
+        std::uint32_t t = -s % s;
+        while (l < t) {
+            x = gen();
+            std::uint64_t m = static_cast<std::uint64_t>(x) * static_cast<std::uint64_t>(s);
+            l = std::uint32_t(m);
+        }
+    }
+    return m >> 32;
+}
+
 // Daniel Lemire's fast random integer in an interval [0, s) algorithm. This should be part 
 // of the std::uniform_int_distribution already. 
 // TODO; Have to make it safe to use eg. check if gen will return a 32 or 64 bit word.
@@ -63,8 +82,38 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
 
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
-void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
-    constexpr std::size_t BUFFER_SIZE = 1 << 4;
+void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
+    constexpr std::size_t BUFFER_SIZE = 1 << 8;
+
+    std::size_t i = data_span.size() - 1;
+    std::array<std::size_t, BUFFER_SIZE> buffer{};
+
+    for (; i >= BUFFER_SIZE; i -= BUFFER_SIZE) {
+        for (std::size_t k = 0; k < BUFFER_SIZE; k++) {
+            // std::uniform_int_distribution<> distrib(0, i - k);
+            // std::size_t j = distrib(gen);
+            std::size_t j = my_uniform_int_distribution_32(i - k + 1, gen);
+            buffer[k] = j;
+        }
+        for (std::size_t k = 0; k < BUFFER_SIZE; k++) {
+            using std::swap;
+            swap(data_span[i - k], data_span[buffer[k]]);
+        }
+    }
+    while (i > 0) {
+        // std::uniform_int_distribution<> distrib(0, i);
+        // std::size_t j = distrib(gen);
+        std::size_t j = my_uniform_int_distribution_32(i + 1, gen);
+        using std::swap;
+        swap(data_span[i], data_span[j]);
+        i--;
+    }
+}
+
+// Buffered version of Fisher-Yates as in Daniel Lemire's paper.
+template<typename T, typename RNG>
+void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
+    constexpr std::size_t BUFFER_SIZE = 1 << 8;
 
     std::size_t i = data_span.size() - 1;
     std::array<std::size_t, BUFFER_SIZE> buffer{};
@@ -88,6 +137,17 @@ void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
         using std::swap;
         swap(data_span[i], data_span[j]);
         i--;
+    }
+}
+
+// Buffered version of Fisher-Yates as in Daniel Lemire's paper.
+template<typename T, typename RNG>
+void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
+    // May change the numeric_limits to (1 << 32)
+    if (data_span.size() <= std::numeric_limits<std::uint32_t>::max() + 1) {
+        buffered_fisher_yates_shuffle_32(data_span, gen);
+    } else {
+        buffered_fisher_yates_shuffle_64(data_span, gen);
     }
 }
 
