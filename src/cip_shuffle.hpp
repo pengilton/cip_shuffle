@@ -9,9 +9,10 @@
 #include <numeric>
 #include <cmath>
 
-constexpr std::size_t LOG_NUM_BUCKETS = 2;                  // Default is 7;
+constexpr std::size_t LOG_NUM_BUCKETS = 2;                  // Default is 7; 2, 5, 7
 constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
-constexpr std::size_t THRESHOLD = 1 << 2;                   // Default is 18; 8, 12, 18
+constexpr std::size_t THRESHOLD = 1 << 8;                   // Default is 18; 8, 12, 18
+constexpr std::size_t BUFFER_SIZE = 1 << 8;                 // Default is 8, Might change
 
 // Bucket as data structure
 struct bucket_limits {
@@ -83,7 +84,7 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
-    constexpr std::size_t BUFFER_SIZE = 1 << 8;
+    // constexpr std::size_t BUFFER_SIZE = 1 << 8;
 
     std::size_t i = data_span.size() - 1;
     std::array<std::size_t, BUFFER_SIZE> buffer{};
@@ -113,7 +114,7 @@ void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
-    constexpr std::size_t BUFFER_SIZE = 1 << 8;
+    // constexpr std::size_t BUFFER_SIZE = 1 << 8;
 
     std::size_t i = data_span.size() - 1;
     std::array<std::size_t, BUFFER_SIZE> buffer{};

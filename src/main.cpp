@@ -5,7 +5,7 @@
 #include <chrono>
 #include <cip_shuffle.hpp>
 
-std::filesystem::path create_csv_path(size_t num_buckets, size_t threshold) {
+std::filesystem::path create_csv_path(size_t num_buckets, size_t buffer_size, size_t threshold) {
     // Folder wher all benchmarks should be stored
     std::filesystem::path path = "../benchmarks";
 
@@ -20,6 +20,7 @@ std::filesystem::path create_csv_path(size_t num_buckets, size_t threshold) {
 
     std::string filename = std::string(buffer) 
                            + "-nb=" + std::to_string(num_buckets) 
+                           + "-bf=" + std::to_string(buffer_size) 
                            + "-th=" + std::to_string(threshold)
                            + "-cpp"
                            + ".csv";
@@ -38,7 +39,7 @@ int main() {
     const std::size_t min_exp = 0;  //inclusive
     const std::size_t max_exp = 30; //exclusive
 
-    std::filesystem::path path = create_csv_path(NUM_BUCKETS, THRESHOLD);
+    std::filesystem::path path = create_csv_path(NUM_BUCKETS, BUFFER_SIZE, THRESHOLD);
 
     std::fstream my_file;
     my_file.open(path, std::ios::out);
