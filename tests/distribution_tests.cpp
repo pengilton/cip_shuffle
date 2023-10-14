@@ -33,13 +33,14 @@ class CipShuffleTestFixture : public testing::TestWithParam<std::size_t> {
         double confidence;
 
         void SetUp() override {
-            seed = 1234567;
+            seed = 6543976;
             confidence = 0.05;
         }
 };
 
 TEST_P(CipShuffleTestFixture, IndependenceTest) {
     std::mt19937_64 generator(seed);
+    // std::mt19937 generator(seed);
 
     std::size_t param = GetParam();
     const std::size_t size = param;
@@ -51,8 +52,9 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
         std::vector<std::size_t> V(size);
         std::iota(V.begin(), V.end(), 0);
         std::span vector_span {V};
-        inplace_scatter_shuffle(vector_span, generator);
-        // buffered_fisher_yates_shuffle_64(vector_span, generator);
+        buffered_fisher_yates_shuffle_32(vector_span, generator);
+        // fisher_yates_shuffle(vector_span, generator);
+        // std::shuffle(vector_span.begin(), vector_span.end(), generator);
 
         for (std::size_t j = 0; j < size; j++) {
             std::size_t i = vector_span[j];
@@ -77,7 +79,7 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
 
 INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
                          CipShuffleTestFixture,
-                         // testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 30, 40, 50));
+                         testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 30, 40, 50));
                          // testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20));
                          // testing::Values(17));
-                         testing::Values(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
+                         // testing::Values(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
