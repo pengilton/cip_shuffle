@@ -25,9 +25,31 @@ void my_print(std::vector<std::vector<std::size_t>> &matrix) {
     }
 }
 
+void my_print(std::vector<std::size_t>& vec) {
+    for (auto& a : vec) {
+        std::cout << a << " ";
+    }
+    std::cout << "\n";
+}
+
 //-------------------------------------------------------------------------------------------------
 
-class CipShuffleTestFixture : public testing::TestWithParam<std::size_t> {
+// We create a function which slices a generated number (64 bit) into multiple n bit numbers.
+template<typename RNG>
+void random_n_bit_numbners(int n, std::vector<std::uint64_t>& buffer, RNG &gen) {
+    std::uint64_t bitmask = (1UL << n) - 1;
+
+    std::uint64_t x = gen();
+    for (std::size_t i = 0; i < buffer.size(); i++) {
+        std::uint64_t chunk = static_cast<std::uint64_t>(x & bitmask); // Extract the lowest n bits
+        buffer[i] = chunk;
+        x = x >> n;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------
+
+class DistributionTestFixture : public testing::TestWithParam<std::size_t> {
     protected:
         int seed;
         double confidence;
@@ -38,48 +60,121 @@ class CipShuffleTestFixture : public testing::TestWithParam<std::size_t> {
         }
 };
 
-TEST_P(CipShuffleTestFixture, IndependenceTest) {
+
+TEST_P(DistributionTestFixture, UniformIntDistr) {
     std::mt19937_64 generator(seed);
-    // std::mt19937 generator(seed);
+    std::size_t size = GetParam();
+    std::size_t sample_size = 100 * size * size;
+    std::vector<std::size_t> results(size);
 
-    std::size_t param = GetParam();
-    const std::size_t size = param;
+    std::uniform_int_distribution<> distr(0, size - 1);
+    for (std::size_t l = 0; l < sample_size; l++) {
+        std::size_t i = distr(generator);
+        results[i]++;
+    }
 
-    std::size_t sample_size = 1000 * size * size;
-    std::vector<std::vector<std::size_t>> results(size, std::vector<std::size_t>(size));
+    double critical_value = calc_critical_value(size - 1, confidence);
+    double expected_value = static_cast<double>(sample_size) / static_cast<double>(size);
+    double chi_squared_value = 0.0;
+    for (size_t j = 0; j < size; j++) {
+        chi_squared_value += std::pow(results[j] - expected_value, 2) / expected_value;
+    }
+    bool reject = (chi_squared_value > critical_value) ? true : false;
+    EXPECT_EQ(false, reject) << chi_squared_value << " " << critical_value;
+}
+
+TEST_P(DistributionTestFixture, MyUniformIntDistr32) {
+    std::mt19937_64 generator(seed);
+    std::size_t size = GetParam();
+    std::size_t sample_size = 100 * size * size;
+    std::vector<std::size_t> results(size);
 
     for (std::size_t l = 0; l < sample_size; l++) {
-        std::vector<std::size_t> V(size);
-        std::iota(V.begin(), V.end(), 0);
-        std::span vector_span {V};
-        buffered_fisher_yates_shuffle_32(vector_span, generator);
-        // fisher_yates_shuffle(vector_span, generator);
-        // std::shuffle(vector_span.begin(), vector_span.end(), generator);
+        std::size_t i = my_uniform_int_distribution_32(size, generator);
+        results[i]++;
+    }
 
-        for (std::size_t j = 0; j < size; j++) {
-            std::size_t i = vector_span[j];
-            results[i][j]++;
+    double critical_value = calc_critical_value(size - 1, confidence);
+    double expected_value = static_cast<double>(sample_size) / static_cast<double>(size);
+    double chi_squared_value = 0.0;
+    for (size_t j = 0; j < size; j++) {
+        chi_squared_value += std::pow(results[j] - expected_value, 2) / expected_value;
+    }
+    bool reject = (chi_squared_value > critical_value) ? true : false;
+    EXPECT_EQ(false, reject) << chi_squared_value << " " << critical_value;
+}
+
+TEST_P(DistributionTestFixture, MyUniformIntDistr64) {
+    std::mt19937_64 generator(seed);
+    std::size_t size = GetParam();
+    std::size_t sample_size = 100 * size * size;
+    std::vector<std::size_t> results(size);
+
+    for (std::size_t l = 0; l < sample_size; l++) {
+        std::size_t i = my_uniform_int_distribution_64(size, generator);
+        results[i]++;
+    }
+
+    double critical_value = calc_critical_value(size - 1, confidence);
+    double expected_value = static_cast<double>(sample_size) / static_cast<double>(size);
+    double chi_squared_value = 0.0;
+    for (size_t j = 0; j < size; j++) {
+        chi_squared_value += std::pow(results[j] - expected_value, 2) / expected_value;
+    }
+    bool reject = (chi_squared_value > critical_value) ? true : false;
+    EXPECT_EQ(false, reject) << chi_squared_value << " " << critical_value;
+}
+
+
+// Size only powers of 2
+ TEST_P(DistributionTestFixture, MultipleUniformNumbers) {
+    std::mt19937_64 generator(seed);
+    // std::random_device rd;
+    // std::mt19937_64 generator(rd());
+    std::size_t size = GetParam();
+    std::size_t sample_size = 100 * size * size;
+    std::vector<std::size_t> results(size);
+
+    int bits = static_cast<int>(std::log2(size));
+    std::size_t buffer_size = 64 / bits;
+    std::vector<std::uint64_t> buffer(buffer_size);
+
+    // for (std::size_t l = 0; l < sample_size / buffer_size; l++) {
+    //     random_n_bit_numbners(bits, buffer, generator);
+    //     for (std::size_t j = 0; j < buffer_size; j++) {
+    //         std::size_t i = buffer[j];
+    //         results[i]++;
+    //     }        
+    // }
+
+    std::size_t l = 0;
+    std::size_t j = 0;
+    random_n_bit_numbners(bits, buffer, generator);
+    while (l < sample_size) {
+        std::size_t i = buffer[j];
+        results[i]++;
+
+        j++;
+        if (j >= buffer.size()) {
+            random_n_bit_numbners(bits, buffer, generator);
+            j = 0;
         }
+
+        l++;
     }
 
     my_print(results);
 
-    double critical_value = calc_critical_value(size - 1, confidence / static_cast<double>(size));
+    double critical_value = calc_critical_value(size - 1, confidence);
     double expected_value = static_cast<double>(sample_size) / static_cast<double>(size);
-    for (size_t i = 0; i < size; i++) {
-        std::vector<size_t> observations = results[i];
-        double chi_squared_value = 0.0;
-        for (size_t j = 0; j < size; j++) {
-            chi_squared_value += std::pow(observations[j] - expected_value, 2) / expected_value;
-        }
-        bool reject = (chi_squared_value > critical_value) ? true : false;
-        EXPECT_EQ(false, reject) << i << " " << chi_squared_value << " " << critical_value;
+    double chi_squared_value = 0.0;
+    for (size_t j = 0; j < size; j++) {
+        chi_squared_value += std::pow(results[j] - expected_value, 2) / expected_value;
     }
+    bool reject = (chi_squared_value > critical_value) ? true : false;
+    EXPECT_EQ(false, reject) << chi_squared_value << " " << critical_value;
 }
 
-INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
-                         CipShuffleTestFixture,
-                         testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 30, 40, 50));
-                         // testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20));
-                         // testing::Values(17));
-                         // testing::Values(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
+INSTANTIATE_TEST_SUITE_P(DistributionTest, 
+                         DistributionTestFixture,
+                         testing::Values(2, 4, 8, 16, 32, 64, 128, 256, 512, 1024));
