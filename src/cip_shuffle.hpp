@@ -9,9 +9,9 @@
 #include <numeric>
 #include <cmath>
 
-constexpr std::size_t LOG_NUM_BUCKETS = 7;                  // Default is 7; 2, 5, 7
+constexpr std::size_t LOG_NUM_BUCKETS = 2;                  // Default is 7; 2, 5, 7
 constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
-constexpr std::size_t THRESHOLD = 1 << 18;                   // Default is 18; 8, 12, 18
+constexpr std::size_t THRESHOLD = 1 << 8;                   // Default is 18; 8, 12, 18
 constexpr std::size_t BUFFER_SIZE = 1 << 8;                 // Default is 8, Might change
 
 // Bucket as data structure
@@ -215,15 +215,38 @@ void compact_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
     }
 }
 
+// I could leave out the argument with n because I am to get LOG_NUM_BUCKETS without it
+template<typename T, size_t K, typename RNG>
+void uniform_n_bit_numbners(std::size_t n, std::array<T, K>& buffer, RNG &gen) {
+    std::uint64_t bitmask = (1UL << n) - 1;
+
+    std::uint64_t x = gen();
+    for (std::size_t i = 0; i < buffer.size(); i++) {
+        std::uint64_t chunk = static_cast<std::uint64_t>(x & bitmask); // Extract the lowest n bits
+        buffer[i] = chunk;
+        x = x >> n;
+    }
+}
 
 // Rough Scatter
 template<std::size_t K, typename T, typename RNG>
 void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
     // Uniform distribution from 0 to k-1
-    std::uniform_int_distribution<> distrib(0, K-1);
+    // std::uniform_int_distribution<> distrib(0, K-1);
+    // Could be named buffer as well, but I have a buffer in Fisher-Yates... 
+    // Also this is hard-coded that we we devide a 64-bit number into multiple 
+    // n-bit numbers because the generator will generate a 64-bit number. Though it 
+    // is possible that someone will use a 32-bit generator. 
+    constexpr std::size_t chunks_size = static_cast<std::size_t>(64 / LOG_NUM_BUCKETS);
+    std::array<std::size_t, chunks_size> chunks {};
 
+    uniform_n_bit_numbners(LOG_NUM_BUCKETS, chunks, gen);
+
+    std::size_t i = 0;
     while (true) {
-        int j = distrib(gen);
+        // int std::size_t = distrib(gen);
+        // std::size_t j = my_uniform_int_distribution_64(K, gen);
+        std::size_t j = chunks[i];
 
         // Benchmark if this slows down the code
         if (j != 0) {
@@ -237,6 +260,12 @@ void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets
 
         if (buckets[j].staged == buckets[j].end) {
             break;
+        }
+
+        i++;
+        if (i >= chunks.size()) {
+            uniform_n_bit_numbners(LOG_NUM_BUCKETS, chunks, gen);
+            i = 0;
         }
     }
 }
