@@ -5,7 +5,7 @@
 helloworld.*
 helloworld
 build/
-benchmarks/
+# benchmarks/
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,intellij+all,c++,cmake,vim,emacs,windows,osx,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,intellij+all,c++,cmake,vim,emacs,windows,osx,linux
