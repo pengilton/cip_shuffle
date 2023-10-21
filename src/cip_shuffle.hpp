@@ -11,7 +11,7 @@
 
 constexpr std::size_t LOG_NUM_BUCKETS = 7;                  // Default is 7; 2, 5, 7
 constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
-constexpr std::size_t THRESHOLD = 1 << 18;                   // Default is 18; 8, 12, 18
+constexpr std::size_t THRESHOLD = 1 << 30;                   // Default is 18; 8, 12, 18
 constexpr std::size_t BUFFER_SIZE = 1 << 8;                 // Default is 8, Might change
 
 // Bucket as data structure
