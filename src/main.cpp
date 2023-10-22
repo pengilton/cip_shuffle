@@ -7,7 +7,7 @@
 
 std::filesystem::path create_csv_path(size_t num_buckets, size_t buffer_size, size_t threshold) {
     // Folder wher all benchmarks should be stored
-    std::filesystem::path path = "../benchmarks";
+    std::filesystem::path path = "../benchmarks/cpp";
 
     // Solution based on https://stackoverflow.com/questions/5438482/getting-the-current-time-as-a-yyyy-mm-dd-hh-mm-ss-string
     // We transfomr date and time to YYYYMMDD-HHMMSS
