@@ -5,6 +5,8 @@
 #include <chrono>
 #include <cip_shuffle.hpp>
 
+#include "pcg-cpp-0.98/include/pcg_random.hpp"
+
 std::filesystem::path create_csv_path(size_t num_buckets, size_t buffer_size, size_t threshold) {
     // Folder wher all benchmarks should be stored
     std::filesystem::path path = "../benchmarks/cpp";
@@ -32,8 +34,11 @@ std::filesystem::path create_csv_path(size_t num_buckets, size_t buffer_size, si
 }
 
 int main() {
-    int seed = 12345;
-    std::mt19937_64 generator(seed);
+    // int seed = 12345;
+    // std::mt19937_64 generator(seed);
+
+    pcg_extras::seed_seq_from<std::random_device> seed_source;
+    pcg64 generator(seed_source);
 
     const std::size_t runs = 10;
     const std::size_t min_exp = 0;  //inclusive
