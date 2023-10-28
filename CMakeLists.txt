@@ -12,6 +12,9 @@ if ( MSVC )
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /W4")
 endif()
 
+# Add sanitizer flags for C++ compiler for "Debug" configuration
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined")
+
 # Adding Google Test. As in http://google.github.io/googletest/quickstart-cmake.html
 include(FetchContent)
 FetchContent_Declare(
