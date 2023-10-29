@@ -34,6 +34,7 @@ std::filesystem::path create_csv_path(size_t num_buckets, size_t buffer_size, si
 }
 
 //----------------------------------------------------------------------------------------------------------------
+
 struct benchmark_param {
     std::string function_name;
     std::string prng_name;
@@ -42,8 +43,30 @@ struct benchmark_param {
     std::size_t threshold;
     std::size_t min_exp;
     std::size_t max_exp;
-    std::size_t default_runs;
-    std::chrono::milliseconds min_duration;
+    std::size_t size;
+    std::size_t total_runs;
+    std::chrono::nanoseconds total_runtime;
+    std::size_t DEFAULT_RUNS;
+    std::chrono::milliseconds MIN_DURATION;
+
+    void create_header(std::fstream& file) {
+        // Creating CSV headers
+        file << "function," << "prng," << "buckets," << "buffer," << "threshold," 
+             << "min_exp," << "max_exp," << "integers," << "total_runs," << "total_runtime" << "\n";
+    }
+
+    void write_to_file(std::fstream& file) {
+        file << function_name << ",";
+        file << prng_name << ",";
+        file << num_buckets << ",";
+        file << buffer_size << ",";
+        file << threshold << ",";
+        file << min_exp << ",";
+        file << max_exp << ",";
+        file << size << ",";
+        file << total_runs << ",";
+        file << total_runtime.count() << "\n";
+    }
 };
 
 void benchmark_inplace_scatter_shuffle_pcg() {
@@ -55,8 +78,11 @@ void benchmark_inplace_scatter_shuffle_pcg() {
     benchmark.threshold = THRESHOLD;
     benchmark.min_exp = 0;
     benchmark.max_exp = 29;
-    benchmark.default_runs = 10;
-    benchmark.min_duration = std::chrono::milliseconds(100);
+    benchmark.size = 0;
+    benchmark.total_runs = 0;
+    benchmark.total_runtime = std::chrono::nanoseconds::zero();
+    benchmark.DEFAULT_RUNS = 10;
+    benchmark.MIN_DURATION = std::chrono::milliseconds(100);
 
     pcg_extras::seed_seq_from<std::random_device> seed_source;
     pcg64 generator(seed_source);
@@ -69,9 +95,7 @@ void benchmark_inplace_scatter_shuffle_pcg() {
         std::cout << "Starting benchmark with " << benchmark.num_buckets << " buckets...\n";
 
         // Creating CSV headers
-        my_file << "function," << "prng," << "buckets," << "buffer," << "threshold," 
-                << "min_exp," << "max_exp,"
-                << "integers," << "total_runs," << "total_runtime" << "\n";
+        benchmark.create_header(my_file);
 
         // Initiliazing vector with maximum size
         std::vector<std::size_t> vec(std::pow(2, benchmark.max_exp));
@@ -79,38 +103,29 @@ void benchmark_inplace_scatter_shuffle_pcg() {
         std::span vector_span {vec};
 
         for (std::size_t i = benchmark.min_exp; i <= benchmark.max_exp; i++) {
-            std::size_t size = std::pow(2, i);
+            benchmark.size = std::pow(2, i);
             std::cout << std::setw(static_cast<size_t>(std::log10(benchmark.max_exp))) << i + 1 << "/" << benchmark.max_exp + 1 << " ";
-            std::cout << "Setting size = " << std::setw(static_cast<size_t>(std::log10(std::pow(2, benchmark.max_exp)))) << size;
-            std::cout << " " << "which needs " << sizeof(size_t) * size << " Bytes of storage.\n";
+            std::cout << "Setting size = " << std::setw(static_cast<size_t>(std::log10(std::pow(2, benchmark.max_exp)))) << benchmark.size;
+            std::cout << " " << "which needs " << sizeof(size_t) * benchmark.size << " Bytes of storage.\n";
 
             // Getting the first size elements
-            std::span view = vector_span.first(size);
+            std::span view = vector_span.first(benchmark.size);
 
-            std::size_t total_runs = benchmark.default_runs;
+            benchmark.total_runs = benchmark.DEFAULT_RUNS;
             while (true) {
                 auto start = std::chrono::steady_clock::now();
-                for (std::size_t i = 0; i < total_runs; i++) {
+                for (std::size_t i = 0; i < benchmark.total_runs; i++) {
                     inplace_scatter_shuffle(view, generator);
                 }
                 auto end = std::chrono::steady_clock::now();
 
-                auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-                if (duration >= static_cast<std::chrono::nanoseconds>(benchmark.min_duration)) {
-                    my_file << benchmark.function_name << ",";
-                    my_file << benchmark.prng_name << ",";
-                    my_file << benchmark.num_buckets << ",";
-                    my_file << benchmark.buffer_size << ",";
-                    my_file << benchmark.threshold << ",";
-                    my_file << benchmark.min_exp << ",";
-                    my_file << benchmark.max_exp << ",";
-                    my_file << size << ",";
-                    my_file << total_runs << ",";
-                    my_file << duration.count() << "\n";
-                    std::cout << "Total runtime: " << std::setw(18) << duration.count() << " ns" << "\n";
+                benchmark.total_runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+                if (benchmark.total_runtime >= static_cast<std::chrono::nanoseconds>(benchmark.MIN_DURATION)) {
+                    benchmark.write_to_file(my_file);
+                    std::cout << "Total runtime: " << std::setw(18) << benchmark.total_runtime.count() << " ns" << "\n";
                     break;
                 }
-                total_runs *= 10;
+                benchmark.total_runs *= 10;
             }
             std::cout << "\n";
         }
