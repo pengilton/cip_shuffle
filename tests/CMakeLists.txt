@@ -1,9 +1,7 @@
-cmake_minimum_required(VERSION 3.26)
-
 add_executable(chi_squared_test chi_squared_test.cpp)
 # add_executable(distribution_tests distribution_tests.cpp)
 
-find_package(Boost 1.82 REQUIRED)
+find_package(Boost 1.82)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
