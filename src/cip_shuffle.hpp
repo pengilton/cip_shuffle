@@ -15,21 +15,21 @@
     constexpr std::size_t LOG_NUM_BUCKETS = 7;  // Default is 7; 2, 5, 7
 #endif
 
-#ifdef LOG_THRESHOLD_VAR
-    constexpr std::size_t LOG_THRESHOLD = LOG_THRESHOLD_VAR;                   
-#else
-    constexpr std::size_t LOG_THRESHOLD = 18;   // Default is 18; 8, 12, 18
-#endif
-
 #ifdef LOG_BUFFER_SIZE_VAR
     constexpr std::size_t LOG_BUFFER_SIZE = LOG_BUFFER_SIZE_VAR;
 #else
     constexpr std::size_t LOG_BUFFER_SIZE = 8;  // Default is 8, Might change
 #endif
 
+#ifdef LOG_THRESHOLD_VAR
+    constexpr std::size_t LOG_THRESHOLD = LOG_THRESHOLD_VAR;                   
+#else
+    constexpr std::size_t LOG_THRESHOLD = 18;   // Default is 18; 8, 12, 18
+#endif
+
 constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
+constexpr std::size_t BUFFER_SIZE = 1 << LOG_BUFFER_SIZE; 
 constexpr std::size_t THRESHOLD = 1 << LOG_THRESHOLD;
-constexpr std::size_t BUFFER_SIZE = 1 << LOG_BUFFER_SIZE;                 
 
 // Bucket as data structure
 struct bucket_limits {
