@@ -91,7 +91,6 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
             std::uniform_int_distribution<> distrib(i, data_span.size()-1);
             std::size_t j = distrib(gen);
 
-            // swapping of values -> might change this with std::swap
             using std::swap;
             swap(data_span[i], data_span[j]);
         }
@@ -101,15 +100,11 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
-    // constexpr std::size_t BUFFER_SIZE = 1 << 8;
-
     std::size_t i = data_span.size() - 1;
     std::array<std::size_t, BUFFER_SIZE> buffer{};
 
     for (; i >= BUFFER_SIZE; i -= BUFFER_SIZE) {
         for (std::size_t k = 0; k < BUFFER_SIZE; k++) {
-            // std::uniform_int_distribution<> distrib(0, i - k);
-            // std::size_t j = distrib(gen);
             std::size_t j = my_uniform_int_distribution_32(static_cast<uint32_t>(i - k + 1), gen);
             buffer[k] = j;
         }
@@ -119,8 +114,6 @@ void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
         }
     }
     while (i > 0) {
-        // std::uniform_int_distribution<> distrib(0, i);
-        // std::size_t j = distrib(gen);
         std::size_t j = my_uniform_int_distribution_32(static_cast<uint32_t>(i + 1), gen);
         using std::swap;
         swap(data_span[i], data_span[j]);
@@ -131,15 +124,11 @@ void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
-    // constexpr std::size_t BUFFER_SIZE = 1 << 8;
-
     std::size_t i = data_span.size() - 1;
     std::array<std::size_t, BUFFER_SIZE> buffer{};
 
     for (; i >= BUFFER_SIZE; i -= BUFFER_SIZE) {
         for (std::size_t k = 0; k < BUFFER_SIZE; k++) {
-            // std::uniform_int_distribution<> distrib(0, i - k);
-            // std::size_t j = distrib(gen);
             std::size_t j = my_uniform_int_distribution_64(i - k + 1, gen);
             buffer[k] = j;
         }
@@ -149,8 +138,6 @@ void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
         }
     }
     while (i > 0) {
-        // std::uniform_int_distribution<> distrib(0, i);
-        // std::size_t j = distrib(gen);
         std::size_t j = my_uniform_int_distribution_64(i + 1, gen);
         using std::swap;
         swap(data_span[i], data_span[j]);
@@ -161,7 +148,6 @@ void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
-    // May change the numeric_limits to (1 << 32)
     if (data_span.size() <= std::numeric_limits<std::uint32_t>::max()) {
         buffered_fisher_yates_shuffle_32(data_span, gen);
     } else {
@@ -180,11 +166,7 @@ void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
 
     if (stash_size <= buckets[K - 1].num_total()) {
         compact_stashes(data_span, buckets, stash_size);
-        // fisher_yates_shuffle(data_span.last(stash_size), gen);
-        // std::shuffle(data_span.end() - stash_size, data_span.end(), gen);
-        // buffered_fisher_yates_shuffle(data_span.subspan(data_span.size() - stash_size, stash_size), gen);
         buffered_fisher_yates_shuffle(data_span.last(stash_size), gen);
-        // buffered_fisher_yates_shuffle_64(data_span.last(stash_size), gen);
         compact_stashes(data_span, buckets, stash_size);
     } else {
         // Now we can assign the remaining staged items. We move the staged
@@ -203,12 +185,7 @@ void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
             }
         }
 
-        // All staged items should be grouped together now. 
-        // fisher_yates_shuffle(data_span.first(stack.size()), gen);
-        // std::shuffle(data_span.begin(), data_span.begin() + stack.size(), gen);
         buffered_fisher_yates_shuffle(data_span.first(stack.size()), gen);
-        // buffered_fisher_yates_shuffle(data_span.subspan(0, stash_size), gen);
-        // buffered_fisher_yates_shuffle_64(data_span.first(stack.size()), gen);
 
         // Now reverting the reordering
         while (stack.size() > 0) {

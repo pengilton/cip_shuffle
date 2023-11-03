@@ -1,4 +1,4 @@
-set(BUILD_SINGLE_EXECUTABLES FALSE)
+set(BUILD_SINGLE_EXECUTABLES TRUE)
 
 add_library(
     cip_shuffle INTERFACE
