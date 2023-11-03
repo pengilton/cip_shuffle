@@ -25,10 +25,45 @@ if(BUILD_SINGLE_EXECUTABLES)
     target_link_libraries(main cip_shuffle pcg_cpp)
 else()
     # Here we can build multiple executable so we can run one bash script which runs all exectuables back to back
-    add_executable(main-4-8-8 main.cpp)
-    target_link_libraries(main-4-8-8 cip_shuffle pcg_cpp)
-    target_compile_definitions(main-4-8-8 PUBLIC 
-                               -DLOG_NUM_BUCKETS_VAR=4 
+    add_executable(main-2-8-8 main.cpp)
+    target_link_libraries(main-2-8-8 cip_shuffle pcg_cpp)
+    target_compile_definitions(main-2-8-8 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=2 
                                -DLOG_BUFFER_SIZE_VAR=8 
                                -DLOG_THRESHOLD_VAR=8)
+
+    add_executable(main-2-8-12 main.cpp)
+    target_link_libraries(main-2-8-12 cip_shuffle pcg_cpp)
+    target_compile_definitions(main-2-8-12 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=2 
+                               -DLOG_BUFFER_SIZE_VAR=8 
+                               -DLOG_THRESHOLD_VAR=12)
+
+    add_executable(main-2-8-18 main.cpp)
+    target_link_libraries(main-2-8-18 cip_shuffle pcg_cpp)
+    target_compile_definitions(main-2-8-18 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=2 
+                               -DLOG_BUFFER_SIZE_VAR=8 
+                               -DLOG_THRESHOLD_VAR=18)
+
+    add_executable(main-7-8-8 main.cpp)
+    target_link_libraries(main-7-8-8 cip_shuffle pcg_cpp)
+    target_compile_definitions(main-7-8-8 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=7 
+                               -DLOG_BUFFER_SIZE_VAR=8 
+                               -DLOG_THRESHOLD_VAR=8)
+
+    add_executable(main-7-8-12 main.cpp)
+    target_link_libraries(main-7-8-12 cip_shuffle pcg_cpp)
+    target_compile_definitions(main-7-8-12 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=7 
+                               -DLOG_BUFFER_SIZE_VAR=8 
+                               -DLOG_THRESHOLD_VAR=12)
+
+    add_executable(main-7-8-18 main.cpp)
+    target_link_libraries(main-7-8-18 cip_shuffle pcg_cpp)
+    target_compile_definitions(main-7-8-18 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=7 
+                               -DLOG_BUFFER_SIZE_VAR=8 
+                               -DLOG_THRESHOLD_VAR=18)
 endif()
