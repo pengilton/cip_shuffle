@@ -14,7 +14,7 @@ if(MSVC)
 endif()
 
 # Add sanitizer flags for C++ compiler for "Debug" configuration
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined")
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined -fsanitize-undefined-trap-on-error")
 
 if(ENABLE_TESTS)
     # Adding Google Test. As in http://google.github.io/googletest/quickstart-cmake.html
