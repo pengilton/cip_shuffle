@@ -2,6 +2,7 @@
 #include <boost/math/distributions/chi_squared.hpp>
 
 #include <cip_shuffle.hpp>
+#include "pcg-cpp-0.98/include/pcg_random.hpp"
 
 double calc_critical_value(int degree_of_freedom, double alpha) {
     try {
@@ -39,7 +40,8 @@ class CipShuffleTestFixture : public testing::TestWithParam<std::size_t> {
 };
 
 TEST_P(CipShuffleTestFixture, IndependenceTest) {
-    std::mt19937_64 generator(seed);
+    // std::mt19937_64 generator(seed);
+    pcg64 generator(seed);
 
     std::size_t param = GetParam();
     const std::size_t size = param;
@@ -77,7 +79,4 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
 
 INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
                          CipShuffleTestFixture,
-                         // testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 30, 40, 50));
-                         // testing::Values(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20));
-                         // testing::Values(17));
                          testing::Values(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));

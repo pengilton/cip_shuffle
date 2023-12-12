@@ -76,12 +76,12 @@ void benchmark_inplace_scatter_shuffle_pcg() {
     benchmark.num_buckets = NUM_BUCKETS;
     benchmark.buffer_size = BUFFER_SIZE;
     benchmark.threshold = THRESHOLD;
-    benchmark.min_exp = 0;
-    benchmark.max_exp = 29;
+    benchmark.min_exp = 19; // 0
+    benchmark.max_exp = 19; // 29
     benchmark.size = 0;
     benchmark.total_runs = 0;
     benchmark.total_runtime = std::chrono::nanoseconds::zero();
-    benchmark.DEFAULT_RUNS = 10;
+    benchmark.DEFAULT_RUNS = 5;
     benchmark.MIN_DURATION = std::chrono::milliseconds(100);
 
     pcg_extras::seed_seq_from<std::random_device> seed_source;

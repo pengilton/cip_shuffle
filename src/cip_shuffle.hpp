@@ -12,7 +12,7 @@
 #ifdef LOG_NUM_BUCKETS_VAR
     constexpr std::size_t LOG_NUM_BUCKETS = LOG_NUM_BUCKETS_VAR;
 #else
-    constexpr std::size_t LOG_NUM_BUCKETS = 7;  // Default is 7; 2, 5, 7
+    constexpr std::size_t LOG_NUM_BUCKETS = 4;  // Default is 7; 2, 5, 7
 #endif
 
 #ifdef LOG_BUFFER_SIZE_VAR
@@ -24,7 +24,7 @@
 #ifdef LOG_THRESHOLD_VAR
     constexpr std::size_t LOG_THRESHOLD = LOG_THRESHOLD_VAR;                   
 #else
-    constexpr std::size_t LOG_THRESHOLD = 18;   // Default is 18; 8, 12, 18
+    constexpr std::size_t LOG_THRESHOLD = 4;   // Default is 18; 8, 12, 18
 #endif
 
 constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
@@ -225,24 +225,20 @@ void uniform_n_bit_numbners(std::size_t n, std::array<T, K>& buffer, RNG &gen) {
 // Rough Scatter
 template<std::size_t K, typename T, typename RNG>
 void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
-    // Uniform distribution from 0 to k-1
-    // std::uniform_int_distribution<> distrib(0, K-1);
-    // Could be named buffer as well, but I have a buffer in Fisher-Yates... 
-    // Also this is hard-coded that we we devide a 64-bit number into multiple 
-    // n-bit numbers because the generator will generate a 64-bit number. Though it 
-    // is possible that someone will use a 32-bit generator. 
-    constexpr std::size_t chunks_size = static_cast<std::size_t>(64 / LOG_NUM_BUCKETS);
-    std::array<std::size_t, chunks_size> chunks {};
+    // bitmask to get lower bits 
+    constexpr std::uint64_t bitmask = (1UL << LOG_NUM_BUCKETS) - 1;
 
-    uniform_n_bit_numbners(LOG_NUM_BUCKETS, chunks, gen);
+    // counter which shows how many bits are left
+    std::size_t bits_left = 64;
+    // bits will hold 
+    std::uint64_t random_bits = gen();
 
-    std::size_t i = 0;
     while (true) {
-        // int std::size_t = distrib(gen);
-        // std::size_t j = my_uniform_int_distribution_64(K, gen);
-        std::size_t j = chunks[i];
+        // We generate a new random index from random_bits
+        std::uint64_t j = static_cast<std::uint64_t>(random_bits & bitmask);
+        random_bits = random_bits >> LOG_NUM_BUCKETS;
+        bits_left -= LOG_NUM_BUCKETS;
 
-        // Benchmark if this slows down the code
         if (j != 0) {
             using std::swap;
             std::size_t s_0 = buckets[0].staged;
@@ -256,10 +252,10 @@ void rough_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets
             break;
         }
 
-        i++;
-        if (i >= chunks.size()) {
-            uniform_n_bit_numbners(LOG_NUM_BUCKETS, chunks, gen);
-            i = 0;
+        // We check if we have to generate new random bits
+        if (bits_left < LOG_NUM_BUCKETS) {
+            random_bits = gen();
+            bits_left = 64;
         }
     }
 }
@@ -312,29 +308,6 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
         growth_needed_left += final_bucket_sizes[i] - buckets[i].num_total();
     }
     
-    /* long long growth_needed_left = 0;
-    for (std::size_t i = 0; i+1 < K; i++) {
-        size_t reservation_for_left = std::max(growth_needed_left, static_cast<long long>(0));
-        size_t target_with_reservation = final_bucket_sizes[i] + reservation_for_left;
-        if (buckets[i].num_total() > target_with_reservation) {
-            size_t num_to_move = buckets[i].num_total() - target_with_reservation;
-            // We check if there are enough placed items in bucket i+1.
-            if (num_to_move > buckets[i+1].num_placed()) {
-                std::swap_ranges(data_span.begin() + buckets[i].end - num_to_move, 
-                                 data_span.begin() + buckets[i].end,
-                                 data_span.begin() + buckets[i+1].begin);
-            } else {
-                std::swap_ranges(data_span.begin() + buckets[i].end - num_to_move, 
-                                 data_span.begin() + buckets[i].end,
-                                 data_span.begin() + buckets[i+1].staged - num_to_move);
-            }
-            buckets[i].end -= num_to_move;
-            buckets[i+1].begin -= num_to_move;
-            buckets[i+1].staged -= num_to_move;
-        }
-        growth_needed_left += final_bucket_sizes[i] - buckets[i].num_total();
-    } */
-
     // We sweep from right to left
     for (size_t i = K-1; i > 0; i--) {
         while (buckets[i].num_total() > final_bucket_sizes[i]) {
@@ -352,9 +325,7 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     shuffle_stashes(data_span, buckets, gen);
 }
 
-
-// IpScShuf
-// First draft of the inplace scatter shuffle algorithm based on chapter 3
+// Our InplaceScatterShuffle implementation
 template<typename T, typename RNG>
 void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     // Might be unnecessary
