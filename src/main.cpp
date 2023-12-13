@@ -76,8 +76,82 @@ void benchmark_inplace_scatter_shuffle_pcg() {
     benchmark.num_buckets = NUM_BUCKETS;
     benchmark.buffer_size = BUFFER_SIZE;
     benchmark.threshold = THRESHOLD;
+<<<<<<< Updated upstream
     benchmark.min_exp = 19; // 0
     benchmark.max_exp = 19; // 29
+=======
+    benchmark.min_exp = 0;
+    benchmark.max_exp = 33; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
+    benchmark.size = 0;
+    benchmark.total_runs = 0;
+    benchmark.total_runtime = std::chrono::nanoseconds::zero();
+    benchmark.DEFAULT_RUNS = 10;
+    benchmark.MIN_DURATION = std::chrono::milliseconds(100);
+
+    pcg_extras::seed_seq_from<std::random_device> seed_source;
+    pcg64 generator(seed_source);
+
+    std::filesystem::path path = create_csv_path(benchmark.num_buckets, benchmark.buffer_size, benchmark.threshold);
+
+    std::fstream my_file;
+    my_file.open(path, std::ios::out);
+    if (my_file.is_open()) {
+        std::cout << "Starting benchmark with " << benchmark.num_buckets << " buckets...\n";
+
+        // Creating CSV headers
+        benchmark.create_header(my_file);
+
+        // Initiliazing vector with maximum size
+        std::vector<std::size_t> vec(std::pow(2, benchmark.max_exp));
+        std::iota(vec.begin(), vec.end(), 0);
+        std::span vector_span {vec};
+
+        for (std::size_t i = benchmark.min_exp; i <= benchmark.max_exp; i++) {
+            benchmark.size = std::pow(2, i);
+            std::cout << std::setw(static_cast<size_t>(std::log10(benchmark.max_exp))) << i + 1 << "/" << benchmark.max_exp + 1 << " ";
+            std::cout << "Setting size = " << std::setw(static_cast<size_t>(std::log10(std::pow(2, benchmark.max_exp)))) << benchmark.size;
+            std::cout << " " << "which needs " << sizeof(size_t) * benchmark.size << " Bytes of storage.\n";
+
+            // Getting the first size elements
+            std::span view = vector_span.first(benchmark.size);
+
+            benchmark.total_runs = benchmark.DEFAULT_RUNS;
+            while (true) {
+                auto start = std::chrono::steady_clock::now();
+                for (std::size_t i = 0; i < benchmark.total_runs; i++) {
+                    inplace_scatter_shuffle(view, generator);
+                }
+                auto end = std::chrono::steady_clock::now();
+
+                benchmark.total_runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+                if (benchmark.total_runtime >= static_cast<std::chrono::nanoseconds>(benchmark.MIN_DURATION)) {
+                    benchmark.write_to_file(my_file);
+                    std::cout << "Total runtime: " << std::setw(18) << benchmark.total_runtime.count() << " ns" << "\n";
+                    break;
+                }
+                benchmark.total_runs *= 10;
+            }
+            std::cout << "\n";
+        }
+
+        std::cout << "Benchmark done!" << std::endl;
+
+        my_file.close();
+    } else {
+        std::cout << "ERROR: File not found!" << "\n";
+    }
+} 
+
+void benchmark_fy_shuffle_32() {
+    benchmark_param benchmark;
+    benchmark.function_name = "fy_shuffle_32";
+    benchmark.prng_name = "pcg64";
+    benchmark.num_buckets = NUM_BUCKETS;
+    benchmark.buffer_size = BUFFER_SIZE;
+    benchmark.threshold = THRESHOLD;
+    benchmark.min_exp = 0;
+    benchmark.max_exp = 33; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
+>>>>>>> Stashed changes
     benchmark.size = 0;
     benchmark.total_runs = 0;
     benchmark.total_runtime = std::chrono::nanoseconds::zero();
