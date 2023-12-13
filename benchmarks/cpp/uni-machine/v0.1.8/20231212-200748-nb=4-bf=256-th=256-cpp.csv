@@ -1,0 +1,10 @@
+function,prng,buckets,buffer,threshold,min_exp,max_exp,integers,total_runs,total_runtime
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,1,10000000,470813850
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,2,10000000,503435781
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,4,10000000,551439414
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,8,10000000,640650586
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,16,10000000,836958548
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,32,1000000,121079339
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,64,1000000,201716961
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,128,1000000,351771363
+inplace_scatter_shuffle,pcg64,4,256,256,0,8,256,1000000,654406125
