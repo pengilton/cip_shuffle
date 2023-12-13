@@ -46,7 +46,7 @@ struct bucket_limits {
 template<typename RNG>
 std::uint32_t my_uniform_int_distribution_32(std::uint32_t s, RNG &gen) {
     // This should generate a 64 Bit word using any generator. We 
-    // save it as a 32 Bit word. x should be random from [0, 2^32).
+    // save it as a 32 Bit word. s should be random from [0, 2^32).
     std::uint32_t x = static_cast<uint32_t>(gen());
     std::uint64_t m = static_cast<std::uint64_t>(x) * static_cast<std::uint64_t>(s);
     std::uint32_t l = std::uint32_t(m);
@@ -67,7 +67,7 @@ std::uint32_t my_uniform_int_distribution_32(std::uint32_t s, RNG &gen) {
 template<typename RNG>
 std::uint64_t my_uniform_int_distribution_64(std::uint64_t s, RNG &gen) {
     // This should generate a 64 Bit word using any generator. We 
-    // save it as a 64 Bit word. x should be random from [0, 2^64).
+    // save it as a 64 Bit word. s should be random from [0, 2^64).
     std::uint64_t x = gen();
     __uint128_t m = static_cast<__uint128_t>(x) * static_cast<__uint128_t>(s);
     std::uint64_t l = std::uint64_t(m);
@@ -86,10 +86,38 @@ std::uint64_t my_uniform_int_distribution_64(std::uint64_t s, RNG &gen) {
 template<typename T, typename RNG>
 void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     if (!data_span.empty()) {
-        for (std::size_t i = 0; i < data_span.size() - 1; i++) {
-            // uniform sample from [i, N)
-            std::uniform_int_distribution<> distrib(i, data_span.size()-1);
+        for (std::size_t i = data_span.size() - 1; i > 0; i--) {
+            // uniform sample from [0, i]
+            std::uniform_int_distribution<> distrib(0, i);
             std::size_t j = distrib(gen);
+
+            using std::swap;
+            swap(data_span[i], data_span[j]);
+        }
+    }
+}
+
+// A simple Fisher-Yates implementation
+template<typename T, typename RNG>
+void fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
+    if (!data_span.empty()) {
+        for (std::size_t i = data_span.size() - 1; i > 0; i--) {
+            // uniform sample from [0, i+1)
+            std::size_t j = my_uniform_int_distribution_32(i + 1, gen);
+
+            using std::swap;
+            swap(data_span[i], data_span[j]);
+        }
+    }
+}
+
+// A simple Fisher-Yates implementation
+template<typename T, typename RNG>
+void fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
+    if (!data_span.empty()) {
+        for (std::size_t i = data_span.size() - 1; i > 0; i--) {
+            // uniform sample from [0, i+1)
+            std::size_t j = my_uniform_int_distribution_64(i + 1, gen);
 
             using std::swap;
             swap(data_span[i], data_span[j]);

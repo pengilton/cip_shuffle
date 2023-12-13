@@ -95,7 +95,8 @@
         "source_location": "cpp",
         "cinttypes": "cpp",
         "codecvt": "cpp",
-        "__verbose_abort": "cpp"
+        "__verbose_abort": "cpp",
+        "ranges": "cpp"
     },
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

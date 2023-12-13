@@ -69,7 +69,7 @@ struct benchmark_param {
     }
 };
 
-void benchmark_inplace_scatter_shuffle_pcg() {
+void benchmark_inplace_scatter_shuffle() {
     benchmark_param benchmark;
     benchmark.function_name = "inplace_scatter_shuffle";
     benchmark.prng_name = "pcg64";
@@ -212,6 +212,6 @@ void benchmark_fy_shuffle_32() {
 //----------------------------------------------------------------------------------------------------------------
 
 int main() {
-    benchmark_inplace_scatter_shuffle_pcg();
+    benchmark_inplace_scatter_shuffle();
     return 0;
 }
