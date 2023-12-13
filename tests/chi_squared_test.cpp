@@ -53,8 +53,9 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
         std::vector<std::size_t> V(size);
         std::iota(V.begin(), V.end(), 0);
         std::span vector_span {V};
-        inplace_scatter_shuffle(vector_span, generator);
+        // inplace_scatter_shuffle(vector_span, generator);
         // buffered_fisher_yates_shuffle_64(vector_span, generator);
+        fisher_yates_shuffle_64(vector_span, generator);
 
         for (std::size_t j = 0; j < size; j++) {
             std::size_t i = vector_span[j];

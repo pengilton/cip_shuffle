@@ -12,7 +12,7 @@
 #ifdef LOG_NUM_BUCKETS_VAR
     constexpr std::size_t LOG_NUM_BUCKETS = LOG_NUM_BUCKETS_VAR;
 #else
-    constexpr std::size_t LOG_NUM_BUCKETS = 4;  // Default is 7; 2, 5, 7
+    constexpr std::size_t LOG_NUM_BUCKETS = 2;  // Default is 7; 2, 5, 7
 #endif
 
 #ifdef LOG_BUFFER_SIZE_VAR
@@ -24,7 +24,7 @@
 #ifdef LOG_THRESHOLD_VAR
     constexpr std::size_t LOG_THRESHOLD = LOG_THRESHOLD_VAR;                   
 #else
-    constexpr std::size_t LOG_THRESHOLD = 4;   // Default is 18; 8, 12, 18
+    constexpr std::size_t LOG_THRESHOLD = 18;   // Default is 18; 8, 12, 18
 #endif
 
 constexpr std::size_t NUM_BUCKETS = 1 << LOG_NUM_BUCKETS;
