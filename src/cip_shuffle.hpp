@@ -179,7 +179,7 @@ template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     constexpr std::size_t BUFFER_THRESHOLD = (1 << 8);
     if (data_span.size() < BUFFER_THRESHOLD) {
-
+        fisher_yates_shuffle_32(data_span, gen);
     } else if (data_span.size() < std::numeric_limits<std::uint32_t>::max()) {
         buffered_fisher_yates_shuffle_32(data_span, gen);
     } else {
