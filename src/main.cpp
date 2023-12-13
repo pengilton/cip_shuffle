@@ -418,13 +418,13 @@ void benchmark_fy_shuffle_64() {
 
 void benchmark_buffered_fy() {
     benchmark_param benchmark;
-    benchmark.function_name = "fy_shuffle_32";
+    benchmark.function_name = "buffered_fisher_yates_shuffle";
     benchmark.prng_name = "pcg64";
-    benchmark.num_buckets = NUM_BUCKETS;
+    benchmark.num_buckets = 0;
     benchmark.buffer_size = BUFFER_SIZE;
-    benchmark.threshold = THRESHOLD;
+    benchmark.threshold = 0;
     benchmark.min_exp = 0;
-    benchmark.max_exp = 33; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
+    benchmark.max_exp = 30; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
     benchmark.size = 0;
     benchmark.total_runs = 0;
     benchmark.total_runtime = std::chrono::nanoseconds::zero();
@@ -462,7 +462,7 @@ void benchmark_buffered_fy() {
             while (true) {
                 auto start = std::chrono::steady_clock::now();
                 for (std::size_t i = 0; i < benchmark.total_runs; i++) {
-                    inplace_scatter_shuffle(view, generator);
+                    buffered_fisher_yates_shuffle(view, generator);
                 }
                 auto end = std::chrono::steady_clock::now();
 
@@ -492,6 +492,7 @@ int main() {
     // benchmark_std_shuffle();
     // benchmark_fy_shuffle();
     // benchmark_fy_shuffle_32();
-    benchmark_fy_shuffle_64();
+    // benchmark_fy_shuffle_64();
+    benchmark_buffered_fy();
     return 0;
 }
