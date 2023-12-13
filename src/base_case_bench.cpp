@@ -628,7 +628,6 @@ void benchmark_buffered_fy_test() {
 //----------------------------------------------------------------------------------------------------------------
 
 int main() {
-    // benchmark_inplace_scatter_shuffle();
     // benchmark_std_shuffle();
     // benchmark_fy_shuffle();
     // benchmark_fy_shuffle_32();

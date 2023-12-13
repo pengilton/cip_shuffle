@@ -173,10 +173,14 @@ void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
     }
 }
 
+
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
-    if (data_span.size() <= std::numeric_limits<std::uint32_t>::max()) {
+    constexpr std::size_t BUFFER_THRESHOLD = (1 << 8);
+    if (data_span.size() < BUFFER_THRESHOLD) {
+
+    } else if (data_span.size() < std::numeric_limits<std::uint32_t>::max()) {
         buffered_fisher_yates_shuffle_32(data_span, gen);
     } else {
         buffered_fisher_yates_shuffle_64(data_span, gen);
