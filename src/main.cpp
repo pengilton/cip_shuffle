@@ -76,8 +76,6 @@ void benchmark_inplace_scatter_shuffle() {
     benchmark.num_buckets = NUM_BUCKETS;
     benchmark.buffer_size = BUFFER_SIZE;
     benchmark.threshold = THRESHOLD;
-    benchmark.min_exp = 19; // 0
-    benchmark.max_exp = 19; // 29
     benchmark.min_exp = 0;
     benchmark.max_exp = 33; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
     benchmark.size = 0;

@@ -41,6 +41,7 @@ struct benchmark_param {
     std::size_t num_buckets;
     std::size_t buffer_size;
     std::size_t threshold;
+    std::size_t buffer_threshold;
     std::size_t min_exp;
     std::size_t max_exp;
     std::size_t size;
@@ -51,7 +52,7 @@ struct benchmark_param {
 
     void create_header(std::fstream& file) {
         // Creating CSV headers
-        file << "function," << "prng," << "buckets," << "buffer," << "threshold," 
+        file << "function," << "prng," << "buckets," << "buffer," << "threshold," << "buffer_threshold,"
              << "min_exp," << "max_exp," << "integers," << "total_runs," << "total_runtime" << "\n";
     }
 
@@ -61,6 +62,7 @@ struct benchmark_param {
         file << num_buckets << ",";
         file << buffer_size << ",";
         file << threshold << ",";
+        file << buffer_threshold << ",";
         file << min_exp << ",";
         file << max_exp << ",";
         file << size << ",";
