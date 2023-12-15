@@ -204,8 +204,7 @@ void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
 
     if (stash_size <= buckets[K - 1].num_total()) {
         compact_stashes(data_span, buckets, stash_size);
-        // buffered_fisher_yates_shuffle(data_span.last(stash_size), gen);
-        fisher_yates_shuffle_32(data_span, gen);
+        buffered_fisher_yates_shuffle(data_span.last(stash_size), gen);
         compact_stashes(data_span, buckets, stash_size);
     } else {
         // Now we can assign the remaining staged items. We move the staged
@@ -373,10 +372,7 @@ void inplace_scatter_shuffle(std::span<T> data_span, RNG &gen) {
     }
 
     if (data_span.size() <= THRESHOLD) {
-        // fisher_yates_shuffle(data_span, gen);
-        // buffered_fisher_yates_shuffle(data_span, gen);
-        // std::shuffle(data_span.begin(), data_span.end(), gen);
-        fisher_yates_shuffle_32(data_span, gen);
+        buffered_fisher_yates_shuffle(data_span, gen);
         return;
     }
 
