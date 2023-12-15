@@ -2,8 +2,9 @@
 # 1 = base_case_bench
 # 2 = buffer test
 # 3 = buckets
-# 4 threshold
-set(BUILD_EXECUTABLES "2")
+# 4 = threshold
+# 5 = treshold fy32
+set(BUILD_EXECUTABLES "5")
 
 add_library(
     cip_shuffle INTERFACE
@@ -28,15 +29,7 @@ if(BUILD_EXECUTABLES EQUAL "0")
     # This one builds only one exectuable with the default parameters set in the header file
     add_executable(main main.cpp)
     target_link_libraries(main cip_shuffle pcg_cpp)
-else(BUILD_EXECUTABLES EQUAL "2")
-    # Here we can build multiple executable so we can run one bash script which runs all exectuables back to back
-    # add_executable(main-0-0-0 main.cpp)
-    # target_link_libraries(main-0-0-0 cip_shuffle pcg_cpp)
-    # target_compile_definitions(main-0-0-0 PUBLIC 
-    #                            -DLOG_NUM_BUCKETS_VAR=0 
-    #                            -DLOG_BUFFER_SIZE_VAR=0 
-    #                            -DLOG_THRESHOLD_VAR=0)
-
+elseif(BUILD_EXECUTABLES EQUAL "2")
     add_executable(buffered_bench_0 buffered_bench.cpp)
     target_link_libraries(buffered_bench_0 cip_shuffle pcg_cpp)
     target_compile_definitions(buffered_bench_0 PUBLIC 
@@ -91,4 +84,144 @@ else(BUILD_EXECUTABLES EQUAL "2")
     target_link_libraries(buffered_bench_10 cip_shuffle pcg_cpp)
     target_compile_definitions(buffered_bench_10 PUBLIC 
                                -DLOG_BUFFER_SIZE_VAR=10)
+elseif(BUILD_EXECUTABLES EQUAL "3")
+    add_executable(cip_shuffle_bench_1 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_1 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_1 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=1)
+    
+    add_executable(cip_shuffle_bench_2 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_2 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_2 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=2)
+    
+    add_executable(cip_shuffle_bench_3 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_3 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_3 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=3)
+
+    add_executable(cip_shuffle_bench_4 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_4 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_4 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=4)
+
+    add_executable(cip_shuffle_bench_5 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_5 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_5 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=5)
+    
+    add_executable(cip_shuffle_bench_6 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_6 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_6 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=6)
+    
+    add_executable(cip_shuffle_bench_7 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_7 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_7 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=7)
+    
+    add_executable(cip_shuffle_bench_8 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_8 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_8 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=8)
+    
+    add_executable(cip_shuffle_bench_9 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_9 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_9 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=9)
+    
+    add_executable(cip_shuffle_bench_10 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_10 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_10 PUBLIC 
+                               -DLOG_NUM_BUCKETS_VAR=10)
+elseif(BUILD_EXECUTABLES EQUAL "4")
+    add_executable(cip_shuffle_bench_10 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_10 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_10 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=10)
+
+    add_executable(cip_shuffle_bench_11 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_11 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_11 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=11)
+    
+    add_executable(cip_shuffle_bench_12 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_12 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_12 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=12)
+
+    add_executable(cip_shuffle_bench_13 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_13 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_13 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=13)
+
+    add_executable(cip_shuffle_bench_14 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_14 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_14 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=14)
+
+    add_executable(cip_shuffle_bench_15 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_15 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_15 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=15)
+    
+    add_executable(cip_shuffle_bench_16 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_16 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_16 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=16)
+
+    add_executable(cip_shuffle_bench_17 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_17 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_17 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=17)
+    
+    add_executable(cip_shuffle_bench_18 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_18 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_18 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=18)
+
+    add_executable(cip_shuffle_bench_19 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_19 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_19 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=19)
+    
+    add_executable(cip_shuffle_bench_20 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_20 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_20 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=20)
+
+    add_executable(cip_shuffle_bench_21 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_21 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_21 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=21)
+
+    add_executable(cip_shuffle_bench_22 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_22 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_22 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=22)
+elseif(BUILD_EXECUTABLES EQUAL "5")    
+    add_executable(cip_shuffle_bench_18 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_18 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_18 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=18)
+
+    add_executable(cip_shuffle_bench_19 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_19 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_19 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=19)
+    
+    add_executable(cip_shuffle_bench_20 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_20 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_20 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=20)
+
+    add_executable(cip_shuffle_bench_21 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_21 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_21 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=21)
+
+    add_executable(cip_shuffle_bench_22 cip_shuffle_bench.cpp)
+    target_link_libraries(cip_shuffle_bench_22 cip_shuffle pcg_cpp)
+    target_compile_definitions(cip_shuffle_bench_22 PUBLIC 
+                               -DLOG_THRESHOLD_VAR=22)
 endif()
