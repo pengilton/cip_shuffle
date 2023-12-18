@@ -95,7 +95,7 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     if (!data_span.empty()) {
         for (std::size_t i = data_span.size() - 1; i > 0; i--) {
             // uniform sample from [0, i]
-            std::uniform_int_distribution<> distrib(0, i);
+            std::uniform_int_distribution<> distrib(0UL, i);
             std::size_t j = distrib(gen);
 
             using std::swap;

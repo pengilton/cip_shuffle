@@ -67,11 +67,11 @@ fn benchmark_seq_shuffle() -> Result<(), Box<dyn Error>> {
         num_buckets: NUM_BUCKETS,
         threshold: BASE_CASE_SIZE,
         min_exp: 0,
-        max_exp: 29,
+        max_exp: 33,
         size: 0,
         total_runs: 0,
         total_runtime: 0u128,
-        default_runs: 10,
+        default_runs: 5,
         min_duration: Duration::from_millis(100)
     };
 

@@ -540,7 +540,7 @@ void benchmark_buffered_fy_32() {
             while (true) {
                 auto start = std::chrono::steady_clock::now();
                 for (std::size_t i = 0; i < benchmark.total_runs; i++) {
-                    benchmark_buffered_fy_32(view, generator);
+                    buffered_fisher_yates_shuffle_32(view, generator);
                 }
                 auto end = std::chrono::steady_clock::now();
 
@@ -636,6 +636,6 @@ void benchmark_buffered_fy_64() {
 //----------------------------------------------------------------------------------------------------------------
 
 int main() {
-    benchmark_inplace_scatter_shuffle;
+    benchmark_inplace_scatter_shuffle();
     return 0;
 }

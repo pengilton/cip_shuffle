@@ -220,7 +220,7 @@ void benchmark_fy_shuffle() {
     benchmark.threshold = THRESHOLD;
     benchmark.buffer_threshold = BUFFER_THRESHOLD;
     benchmark.min_exp = 0;
-    benchmark.max_exp = 33; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
+    benchmark.max_exp = 31; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
     benchmark.size = 0;
     benchmark.total_runs = 0;
     benchmark.total_runtime = std::chrono::nanoseconds::zero();
@@ -540,7 +540,7 @@ void benchmark_buffered_fy_32() {
             while (true) {
                 auto start = std::chrono::steady_clock::now();
                 for (std::size_t i = 0; i < benchmark.total_runs; i++) {
-                    benchmark_buffered_fy_32(view, generator);
+                    buffered_fisher_yates_shuffle_32(view, generator);
                 }
                 auto end = std::chrono::steady_clock::now();
 
@@ -636,11 +636,11 @@ void benchmark_buffered_fy_64() {
 //----------------------------------------------------------------------------------------------------------------
 
 int main() {
-    benchmark_std_shuffle;
-    benchmark_buffered_fy;
-    benchmark_buffered_fy_32;
-    benchmark_buffered_fy_64;
-    benchmark_buffered_fy_32;
-    benchmark_buffered_fy_64;
+    // benchmark_std_shuffle();
+    // benchmark_fy_shuffle();
+    benchmark_fy_shuffle_32();
+    benchmark_fy_shuffle_64();
+    benchmark_buffered_fy_32();
+    benchmark_buffered_fy_64();
     return 0;
 }
