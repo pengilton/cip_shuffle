@@ -4,7 +4,7 @@
 # 3 = buckets
 # 4 = threshold
 # 5 = treshold fy32
-set(BUILD_EXECUTABLES "0")
+set(BUILD_EXECUTABLES "3")
 
 add_library(
     cip_shuffle INTERFACE

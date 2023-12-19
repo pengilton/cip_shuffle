@@ -24,7 +24,7 @@
 #ifdef LOG_THRESHOLD_VAR
     constexpr std::size_t LOG_THRESHOLD = LOG_THRESHOLD_VAR;                   
 #else
-    constexpr std::size_t LOG_THRESHOLD = 18;   // Default is 18; 8, 12, 18
+    constexpr std::size_t LOG_THRESHOLD = 20;   // Default is 18; 8, 12, 18
 #endif
 
 #ifdef LOG_BUFFER_THRESHOLD_VAR
