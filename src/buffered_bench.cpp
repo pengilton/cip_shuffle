@@ -152,7 +152,7 @@ void benchmark_buffered_fy() {
     benchmark.buffer_size = BUFFER_SIZE;
     benchmark.threshold = 0;
     benchmark.min_exp = 0;
-    benchmark.max_exp = 30; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
+    benchmark.max_exp = 33; // 29 for my mac, 30 for my windows machine, 33 for the uni-machine
     benchmark.size = 0;
     benchmark.total_runs = 0;
     benchmark.total_runtime = std::chrono::nanoseconds::zero();
