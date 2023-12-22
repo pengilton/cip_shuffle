@@ -19,5 +19,11 @@ target_link_libraries(
     pcg_cpp
 )
 
+target_compile_definitions(chi_squared_test PUBLIC 
+                            -DLOG_NUM_BUCKETS_VAR=2
+                            -DLOG_BUFFER_SIZE_VAR=5
+                            -DLOG_THRESHOLD_VAR=4
+                            -DLOG_BUFFER_THRESHOLD_VAR=4)
+
 include(GoogleTest)
 gtest_discover_tests(chi_squared_test)

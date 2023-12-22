@@ -47,15 +47,16 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
     const std::size_t size = param;
 
     std::size_t sample_size = 1000 * size * size;
+    // std::size_t sample_size = 1;
     std::vector<std::vector<std::size_t>> results(size, std::vector<std::size_t>(size));
 
     for (std::size_t l = 0; l < sample_size; l++) {
         std::vector<std::size_t> V(size);
         std::iota(V.begin(), V.end(), 0);
         std::span vector_span {V};
-        // inplace_scatter_shuffle(vector_span, generator);
+        inplace_scatter_shuffle(vector_span, generator);
         // buffered_fisher_yates_shuffle_64(vector_span, generator);
-        fisher_yates_shuffle_64(vector_span, generator);
+        // fisher_yates_shuffle_64(vector_span, generator);
 
         for (std::size_t j = 0; j < size; j++) {
             std::size_t i = vector_span[j];
@@ -81,3 +82,12 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
 INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
                          CipShuffleTestFixture,
                          testing::Values(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
+
+
+// I just want to print some messages
+TEST(SendingMessage, SomeMessages) {
+    EXPECT_TRUE(false) << "buckets: " << NUM_BUCKETS << "\n"
+                       << "buffer_size: " << BUFFER_SIZE << "\n"
+                       << "threshold: " << THRESHOLD << "\n"
+                       << "buffer_threshold: " <<  BUFFER_THRESHOLD;
+}

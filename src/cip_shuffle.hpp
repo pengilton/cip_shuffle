@@ -193,6 +193,62 @@ void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     }
 }
 
+// A noncontinuous variant of the fisher-yates shuffle algorithm. The works basically like the 
+// fisher-yates shuffle algorithm but we use the additional information given from the bucekts
+// to calcualte some offset value to reach the noncontinuous staged sections in the data_span.
+template<size_t K, typename T, typename RNG> 
+void noncontinuous_fisher_yates_shuffle(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
+    if (data_span.empty()) {
+        return; 
+    }
+
+    // At index i we store the total number of staged items left of bucket i, 
+    // basically an exclusive prefix sum of the staged items.
+    std::array<size_t, K> num_staged_items_left {};
+    for (std::size_t i = 1; i < K; i++) {
+        num_staged_items_left[i] = num_staged_items_left[i - 1] + buckets[i - 1].num_staged();
+    }
+
+    // Total amount of staged items
+    std::size_t stash_size = num_staged_items_left[K - 1] + buckets[K - 1].num_staged();
+
+    for (std::size_t index = stash_size - 1; index > 0; index--) {
+        std::size_t random_index = my_uniform_int_distribution_64(index + 1, gen);
+
+        // We search for the bucket which contains the index-th staged item
+        std::size_t bucket_num_index = 0;
+        for (std::size_t b_num = 1; b_num < K; b_num++) {
+            if (num_staged_items_left[b_num] <= index) {
+                bucket_num_index = b_num;
+            } else {
+                break;
+            }
+        }
+
+        // We search for the bucket which contains the random_index-th staged item
+        std::size_t bucket_num_random_index = 0;
+        for (std::size_t b_num = 1; b_num < K; b_num++) {
+            if (num_staged_items_left[b_num] <= random_index) {
+                bucket_num_random_index = b_num;
+            } else {
+                break;
+            }
+        }
+        
+        // We map index to the actual location in the data_span
+        std::size_t offset_i = index - num_staged_items_left[bucket_num_index];
+        std::size_t i = buckets[bucket_num_index].staged + offset_i;
+
+        // We map random_index to the actual location in the data_span
+        std::size_t offset_j = random_index - num_staged_items_left[bucket_num_random_index];
+        std::size_t j = buckets[bucket_num_random_index].staged + offset_j;
+
+        using std::swap;
+        swap(data_span[i], data_span[j]);
+    }
+}
+
+
 // A function which puts the staged items into one continuous segment.
 // Ideally the staged items will fit into one bucket.
 template<size_t K, typename T, typename RNG> 
@@ -207,31 +263,10 @@ void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
         buffered_fisher_yates_shuffle(data_span.last(stash_size), gen);
         compact_stashes(data_span, buckets, stash_size);
     } else {
-        // Now we can assign the remaining staged items. We move the staged
-        // items together. There migh be a better way here as well but we assume that
-        // we won't have to fall back to this part of the code that often.
-        std::vector<std::size_t> stack;
-        std::size_t i = 0;
-        for (std::size_t j = 0; j < K; j++) {
-            std::size_t l = buckets[j].staged;
-            while (l < buckets[j].end) {
-                using std::swap;
-                swap(data_span[i], data_span[l]);
-                stack.push_back(l);
-                i++;
-                l++;
-            }
-        }
-
-        buffered_fisher_yates_shuffle(data_span.first(stack.size()), gen);
-
-        // Now reverting the reordering
-        while (stack.size() > 0) {
-            i--;
-            using std::swap;
-            swap(data_span[i], data_span[stack.back()]);
-            stack.pop_back();
-        }
+        // We use a rather unefficient method to shuffle the remaining stashed items. 
+        // This method is not intended to be highly optimised because it is very likely 
+        // that we have to fall back to this. 
+        noncontinuous_fisher_yates_shuffle(data_span, buckets, gen); 
     }
 }
 
@@ -248,6 +283,7 @@ void compact_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
 }
 
 // I could leave out the argument with n because I am to get LOG_NUM_BUCKETS without it
+// DEPRECATED
 template<typename T, size_t K, typename RNG>
 void uniform_n_bit_numbners(std::size_t n, std::array<T, K>& buffer, RNG &gen) {
     std::uint64_t bitmask = (1UL << n) - 1;
