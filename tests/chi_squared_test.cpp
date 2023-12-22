@@ -82,12 +82,3 @@ TEST_P(CipShuffleTestFixture, IndependenceTest) {
 INSTANTIATE_TEST_SUITE_P(CipShuffleTest, 
                          CipShuffleTestFixture,
                          testing::Values(10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
-
-
-// I just want to print some messages
-TEST(SendingMessage, SomeMessages) {
-    EXPECT_TRUE(false) << "buckets: " << NUM_BUCKETS << "\n"
-                       << "buffer_size: " << BUFFER_SIZE << "\n"
-                       << "threshold: " << THRESHOLD << "\n"
-                       << "buffer_threshold: " <<  BUFFER_THRESHOLD;
-}
