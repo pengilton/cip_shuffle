@@ -9,4 +9,5 @@ edition = "2021"
 chrono = "0.4.30"
 csv = "1.2.2"
 rand = "0.8.5"
+rand_pcg = "0.3.1"
 rip_shuffle={version="0.1"}

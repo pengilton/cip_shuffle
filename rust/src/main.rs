@@ -5,6 +5,8 @@ use chrono::{Datelike, Local, Timelike};
 use rip_shuffle::scatter_shuffle::sequential::{NUM_BUCKETS, BASE_CASE_SIZE};
 use std::path::Path;
 use rip_shuffle::RipShuffleSequential;
+use rand::{Rng, SeedableRng};
+use rand_pcg::{Pcg64Mcg, Pcg64};
 
 // This is used to generate our filename
 fn get_path_string(num_buckets: usize, threshold: usize) -> String {
@@ -63,7 +65,7 @@ impl Benchmark {
 fn benchmark_seq_shuffle() -> Result<(), Box<dyn Error>> {
     let mut benchmark = Benchmark {
         function_name: "seq_shuffle".to_owned(),
-        prng_name: "thread_rng".to_owned(),
+        prng_name: "pcg64".to_owned(),
         num_buckets: NUM_BUCKETS,
         threshold: BASE_CASE_SIZE,
         min_exp: 0,
@@ -82,19 +84,23 @@ fn benchmark_seq_shuffle() -> Result<(), Box<dyn Error>> {
     // Header
     benchmark.create_header(&mut wtr);
 
+    // PRNG
+    let mut rng = Pcg64::from_entropy();
+
     println!("Starting benchmark with {} buckets...", benchmark.num_buckets);
     let mut data: Vec<_> = (0..(usize::pow(2, benchmark.max_exp as u32))).into_iter().collect();
 
     for exp in (benchmark.min_exp)..(benchmark.max_exp + 1) {
         benchmark.size = usize::pow(2, exp as u32);
         println!("Setting size = {}", benchmark.size);
-        let data_slie = &mut data[..(benchmark.size)];
+        let data_slice = &mut data[..(benchmark.size)];
         
         benchmark.total_runs = benchmark.default_runs;
         loop {
             let start = Instant::now();
             for _run in 0..(benchmark.total_runs) {
-                data_slie.seq_shuffle(&mut rand::thread_rng());
+                // data_slice.seq_shuffle(&mut rand::thread_rng());
+                data_slice.seq_shuffle(&mut rng);
             }
             benchmark.total_runtime = start.elapsed().as_nanos();
 
