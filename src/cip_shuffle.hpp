@@ -49,7 +49,9 @@ struct bucket_limits {
     std::size_t num_staged() { return end - staged; } 
 };
 
-// Note that gen is a 64 bit generator
+// Note taht gen is a 64-bit generator.
+// This function is from the following paper:
+// Daniel Lemire. 2019. Fast Random Integer Generation in an Interval. ACM Trans. Model. Comput. Simul. 29, 1, Article 3 (January 2019), 12 pages. https://doi.org/10.1145/3230636
 template<typename RNG>
 std::uint32_t my_uniform_int_distribution_32(std::uint32_t s, RNG &gen) {
     // This should generate a 64 Bit word using any generator. We 
@@ -70,7 +72,8 @@ std::uint32_t my_uniform_int_distribution_32(std::uint32_t s, RNG &gen) {
 
 // Daniel Lemire's fast random integer in an interval [0, s) algorithm. This should be part 
 // of the std::uniform_int_distribution already. 
-// TODO; Have to make it safe to use eg. check if gen will return a 32 or 64 bit word.
+// This function is from the following paper:
+// Daniel Lemire. 2019. Fast Random Integer Generation in an Interval. ACM Trans. Model. Comput. Simul. 29, 1, Article 3 (January 2019), 12 pages. https://doi.org/10.1145/3230636
 template<typename RNG>
 std::uint64_t my_uniform_int_distribution_64(std::uint64_t s, RNG &gen) {
     // This should generate a 64 Bit word using any generator. We 
@@ -104,7 +107,7 @@ void fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     }
 }
 
-// A simple Fisher-Yates implementation
+// A simple Fisher-Yates implementation with our own 32-bit uniform_int_distribution
 template<typename T, typename RNG>
 void fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
     if (!data_span.empty()) {
@@ -118,7 +121,7 @@ void fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
     }
 }
 
-// A simple Fisher-Yates implementation
+// A simple Fisher-Yates implementation with our own 64-bit uniform_int_distribution
 template<typename T, typename RNG>
 void fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
     if (!data_span.empty()) {
@@ -133,6 +136,7 @@ void fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
 }
 
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
+// Daniel Lemire. 2019. Fast Random Integer Generation in an Interval. ACM Trans. Model. Comput. Simul. 29, 1, Article 3 (January 2019), 12 pages. https://doi.org/10.1145/3230636
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
     std::size_t i = data_span.size() - 1;
@@ -157,6 +161,7 @@ void buffered_fisher_yates_shuffle_32(std::span<T> data_span, RNG &gen) {
 }
 
 // Buffered version of Fisher-Yates as in Daniel Lemire's paper.
+// Daniel Lemire. 2019. Fast Random Integer Generation in an Interval. ACM Trans. Model. Comput. Simul. 29, 1, Article 3 (January 2019), 12 pages. https://doi.org/10.1145/3230636
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
     std::size_t i = data_span.size() - 1;
@@ -181,7 +186,7 @@ void buffered_fisher_yates_shuffle_64(std::span<T> data_span, RNG &gen) {
 }
 
 
-// Buffered version of Fisher-Yates as in Daniel Lemire's paper.
+// Depending on data_span we either use the faster fisher_yates_shuffle_32 fucntion or switch to one of the buffered variants.
 template<typename T, typename RNG>
 void buffered_fisher_yates_shuffle(std::span<T> data_span, RNG &gen) {
     if (data_span.size() <= BUFFER_THRESHOLD) {
@@ -251,6 +256,7 @@ void noncontinuous_fisher_yates_shuffle(std::span<T> data_span, std::array<bucke
 
 // A function which puts the staged items into one continuous segment.
 // Ideally the staged items will fit into one bucket.
+// This code is based on the implemenation in https://github.com/manpen/rip_shuffle?tab=readme-ov-file
 template<size_t K, typename T, typename RNG> 
 void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &buckets, RNG &gen) {
     size_t stash_size = 0;
@@ -270,6 +276,8 @@ void shuffle_stashes(std::span<T> data_span, std::array<bucket_limits, K> &bucke
     }
 }
 
+// Helper function. 
+// This code is based on the implemenation in https://github.com/manpen/rip_shuffle?tab=readme-ov-file
 template<size_t K, typename T> 
 void compact_stashes(std::span<T> data_span, std::array<bucket_limits, K> &buckets, size_t stash_size) {
     size_t remaining_items = stash_size;
@@ -366,6 +374,7 @@ void fine_scatter(std::span<T> data_span, std::array<bucket_limits, K> &buckets,
     }
 
     // We sweep from left to right. Similar to Penschuck's code. We don't precalcute the C values.
+    // Penschuck's code https://github.com/manpen/rip_shuffle?tab=readme-ov-file
     long long growth_needed_left = 0;
     for (std::size_t i = 0; i+1 < K; i++) {
         size_t reservation_for_left = std::max(growth_needed_left, static_cast<long long>(0));
